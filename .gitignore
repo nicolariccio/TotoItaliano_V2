@@ -62,10 +62,11 @@ ios/ServiceDefinitions.json
 ios/Runner/GeneratedPluginRegistrant.*
 ios/Runner/GoogleService-Info.plist
 
-# Firebase secrets — NEVER commit real config
+# Firebase — per-developer app config, not committed so the repo isn't
+# bound to one Firebase project. Regenerate with `flutterfire configure`.
+# firebase.json/.firebaserc/firestore.rules ARE committed: they're project
+# config and the actual security rules, not secrets.
 lib/firebase_options.dart
-firebase.json
-.firebaserc
 functions/.env
 functions/node_modules/
 functions/lib/

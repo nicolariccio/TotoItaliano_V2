@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/providers/auth_providers.dart';
+import '../../features/auth/presentation/providers/current_user_provider.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -45,6 +46,7 @@ const List<String> _publicAuthRoutes = [
 final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = _RouterRefreshNotifier();
   ref.listen(authStateChangesProvider, (previous, next) => refreshNotifier.notify());
+  ref.listen(currentUserProvider, (previous, next) => refreshNotifier.notify());
   ref.listen(onboardingCompleteProvider, (previous, next) => refreshNotifier.notify());
   ref.onDispose(refreshNotifier.dispose);
 
@@ -53,19 +55,30 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: refreshNotifier,
     redirect: (context, state) {
       final authState = ref.read(authStateChangesProvider);
-      final bool authLoading = authState.isLoading;
-      final bool isAuthenticated = authState.valueOrNull != null;
       final bool onboardingComplete = ref.read(onboardingCompleteProvider);
-
       final String location = state.matchedLocation;
 
+      // Bootstrap iniziale di Firebase Auth: non sappiamo ancora nulla.
+      if (authState.isLoading) return null;
+
+      final bool hasFirebaseSession = authState.valueOrNull != null;
+
+      // Una sessione Firebase Auth SENZA profilo Firestore (registrazione
+      // ancora in corso, o account "orfano" in fase di rollback dopo un
+      // errore) non conta come autenticato ai fini della navigazione:
+      // altrimenti il router manderebbe l'utente in Home a metà flusso,
+      // interrompendo login/register mentre l'operazione è ancora in corso.
+      bool isAuthenticated = false;
+      if (hasFirebaseSession) {
+        final profileState = ref.read(currentUserProvider);
+        if (profileState.isLoading) return null;
+        isAuthenticated = profileState.valueOrNull != null;
+      }
+
       if (location == RoutePaths.splash) {
-        if (authLoading) return null;
         if (!onboardingComplete) return RoutePaths.onboarding;
         return isAuthenticated ? RoutePaths.home : RoutePaths.login;
       }
-
-      if (authLoading) return null;
 
       if (!onboardingComplete) {
         return location == RoutePaths.onboarding ? null : RoutePaths.onboarding;

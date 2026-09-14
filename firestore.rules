@@ -1,0 +1,49 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Nessuna regola qui sotto usa mai `allow read, write: if true`.
+    // Tutto ciò che non è esplicitamente aperto è negato di default.
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // users/{uid} — profilo pubblico (letto da leaderboard/lega/profilo).
+    match /users/{userId} {
+      allow read: if isSignedIn();
+
+      // Creazione consentita solo dal proprietario, e solo con contatori
+      // a zero: un utente non può auto-assegnarsi punti alla registrazione.
+      allow create: if isOwner(userId)
+        && request.resource.data.totalPoints == 0
+        && request.resource.data.predictionsCount == 0
+        && request.resource.data.correctPredictions == 0
+        && request.resource.data.exactPredictions == 0
+        && request.resource.data.successRate == 0
+        && request.resource.data.role == 'user';
+
+      // Update consentito solo sui campi di profilo "innocui". Punteggi,
+      // ruolo, email e codice referral sono modificabili solo lato server
+      // (Cloud Functions con Admin SDK, che bypassano queste regole).
+      allow update: if isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['firstName', 'lastName', 'photoUrl', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+    // Tutto il resto (competitions, matches, predictions, leagues, ecc.)
+    // arriva nelle fasi successive insieme alla feature corrispondente:
+    // fino ad allora resta negato di default, il che è più sicuro di una
+    // regola aperta lasciata "per ora".
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
