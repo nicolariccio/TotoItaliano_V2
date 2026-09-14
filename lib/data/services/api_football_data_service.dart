@@ -32,8 +32,16 @@ class ApiFootballDataService implements FootballDataService {
   static const String apiFootballProxyToken = String.fromEnvironment('API_FOOTBALL_PROXY_TOKEN');
 
   static const int _leagueId = 135; // Serie A
-  static const int _season = 2026; // stagione 2026/27
-  static const String _competitionId = 'serie-a-2026-27';
+
+  // TEMPORANEO: il piano api-football dell'utente è Free e non include la
+  // stagione in corso (2026/27) — l'API risponde esplicitamente "Free
+  // plans do not have access to this season, try from 2022 to 2024",
+  // verificato in test. Usiamo 2023/24 (consentita dal piano) solo per
+  // validare che l'intera catena Flutter → Worker → api-football funzioni
+  // con dati reali. Da riportare a 2026 (season) e 'serie-a-2026-27'
+  // (competitionId) quando il piano viene aggiornato.
+  static const int _season = 2023;
+  static const String _competitionId = 'serie-a-2023-24';
 
   static const Duration _fixturesTtl = Duration(minutes: 5);
   static const Duration _teamsTtl = Duration(hours: 6);
@@ -121,7 +129,7 @@ class ApiFootballDataService implements FootballDataService {
       Competition(
         id: _competitionId,
         name: 'Serie A',
-        season: '2026/27',
+        season: '2023/24',
         sport: 'calcio',
         startDate: start,
         endDate: end,
