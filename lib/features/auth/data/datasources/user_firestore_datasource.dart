@@ -51,6 +51,18 @@ class UserFirestoreDatasource {
     return _users.doc(uid).snapshots().map(_fromDoc);
   }
 
+  /// Classifica generale: utenti attivi ordinati per punti totali
+  /// decrescenti. Letto da tutti gli utenti autenticati (regola `users`
+  /// già lo permette), non richiede una collection separata per l'MVP.
+  Stream<List<AppUser>> watchLeaderboard({int limit = 100}) {
+    return _users
+        .where('isActive', isEqualTo: true)
+        .orderBy('totalPoints', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => _fromDoc(doc)!).toList());
+  }
+
   Future<void> updateProfile(
     String uid, {
     String? firstName,

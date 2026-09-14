@@ -84,6 +84,7 @@ class _ProfileContent extends ConsumerWidget {
                 _StatTile(label: 'Punti', value: '${user.totalPoints}'),
                 _StatTile(label: 'Pronostici', value: '${user.predictionsCount}'),
                 _StatTile(label: 'Esatti', value: '${user.exactPredictions}'),
+                _StatTile(label: 'Successo', value: '${(user.successRate * 100).toStringAsFixed(0)}%'),
               ],
             ),
           ),
@@ -102,6 +103,15 @@ class _ProfileContent extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.history_rounded, color: AppColors.azzurro),
+            title: const Text('I miei pronostici'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push(RoutePaths.predictionHistory),
           ),
         ),
         const SizedBox(height: 24),

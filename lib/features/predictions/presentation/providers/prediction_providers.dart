@@ -26,3 +26,9 @@ final StreamProviderFamily<Prediction?, String> predictionForMatchProvider =
   ref.watch(authStateChangesProvider);
   return ref.watch(predictionRepositoryProvider).watchPrediction(matchId);
 });
+
+/// Tutti i pronostici dell'utente corrente (storico), reattivo a login/logout.
+final StreamProvider<List<Prediction>> myPredictionsProvider = StreamProvider<List<Prediction>>((ref) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(predictionRepositoryProvider).watchMyPredictions();
+});
