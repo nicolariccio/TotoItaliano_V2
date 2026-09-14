@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../leagues/presentation/providers/league_providers.dart';
 import '../../data/datasources/prediction_firestore_datasource.dart';
 import '../../data/repositories/prediction_repository_impl.dart';
 import '../../domain/entities/prediction.dart';
@@ -16,6 +17,7 @@ final Provider<PredictionRepository> predictionRepositoryProvider = Provider<Pre
   (ref) => PredictionRepositoryImpl(
     ref.watch(firebaseAuthProvider),
     ref.watch(predictionFirestoreDatasourceProvider),
+    ref.watch(leagueRepositoryProvider),
   ),
 );
 
@@ -31,4 +33,12 @@ final StreamProviderFamily<Prediction?, String> predictionForMatchProvider =
 final StreamProvider<List<Prediction>> myPredictionsProvider = StreamProvider<List<Prediction>>((ref) {
   ref.watch(authStateChangesProvider);
   return ref.watch(predictionRepositoryProvider).watchMyPredictions();
+});
+
+/// I pronostici già salvati dall'utente per la giornata corrente, per
+/// precompilare la schedina.
+final StreamProviderFamily<List<Prediction>, String> myPredictionsForMatchdayProvider =
+    StreamProvider.family<List<Prediction>, String>((ref, matchdayId) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(predictionRepositoryProvider).watchMyPredictionsForMatchday(matchdayId);
 });

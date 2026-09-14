@@ -2,16 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../core/errors/app_exception_mapper.dart';
 import '../../../../core/errors/failure.dart';
-import '../../../../data/models/match.dart';
+import '../../../leagues/domain/repositories/league_repository.dart';
 import '../../domain/entities/prediction.dart';
 import '../../domain/repositories/prediction_repository.dart';
 import '../datasources/prediction_firestore_datasource.dart';
 
 class PredictionRepositoryImpl implements PredictionRepository {
-  PredictionRepositoryImpl(this._auth, this._datasource);
+  PredictionRepositoryImpl(this._auth, this._datasource, this._leagueRepository);
 
   final FirebaseAuth _auth;
   final PredictionFirestoreDatasource _datasource;
+  final LeagueRepository _leagueRepository;
 
   String _requireUserId() {
     final uid = _auth.currentUser?.uid;
@@ -20,30 +21,16 @@ class PredictionRepositoryImpl implements PredictionRepository {
   }
 
   @override
-  Future<void> savePrediction({
-    required Match match,
-    int? exactHomeScore,
-    int? exactAwayScore,
-    String? result1x2,
-    bool? goalNoGoal,
-    Map<String, bool>? overUnder,
-  }) async {
-    if (!match.isPredictionOpen) {
-      throw const PredictionLockedFailure();
-    }
+  Future<void> saveSchedina(List<PredictionPick> picks) async {
+    if (picks.isEmpty) return;
     try {
       final userId = _requireUserId();
-      await _datasource.upsert(
-        userId: userId,
-        matchId: match.id,
-        competitionId: match.competitionId,
-        matchdayId: match.matchdayId,
-        exactHomeScore: exactHomeScore,
-        exactAwayScore: exactAwayScore,
-        result1x2: result1x2,
-        goalNoGoal: goalNoGoal,
-        overUnder: overUnder,
-      );
+
+      if (!await _leagueRepository.hasAnyLeague()) {
+        throw const ValidationFailure('Devi far parte di una lega per salvare la schedina.');
+      }
+
+      await _datasource.saveSchedina(userId, picks);
     } catch (error) {
       throw AppExceptionMapper.map(error);
     }
@@ -70,5 +57,12 @@ class PredictionRepositoryImpl implements PredictionRepository {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return Stream.value(const []);
     return _datasource.watchForUser(uid);
+  }
+
+  @override
+  Stream<List<Prediction>> watchMyPredictionsForMatchday(String matchdayId) {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return Stream.value(const []);
+    return _datasource.watchForUserAndMatchday(uid, matchdayId);
   }
 }

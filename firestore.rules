@@ -26,46 +26,77 @@ service cloud.firestore {
         && request.resource.data.correctPredictions == 0
         && request.resource.data.exactPredictions == 0
         && request.resource.data.successRate == 0
+        && request.resource.data.leagueCount == 0
         && request.resource.data.role == 'user';
 
-      // Update consentito solo sui campi di profilo "innocui". Punteggi,
-      // ruolo, email e codice referral sono modificabili solo lato server
-      // (Cloud Functions con Admin SDK, che bypassano queste regole).
-      allow update: if isOwner(userId)
-        && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['firstName', 'lastName', 'photoUrl', 'updatedAt']);
+      // Baseline sicura per documenti creati prima dell'introduzione di
+      // leagueCount (il campo può mancare del tutto, non solo essere 0).
+      function currentLeagueCount() {
+        return ('leagueCount' in resource.data) ? resource.data.leagueCount : 0;
+      }
+
+      // Due soli casi ammessi in update:
+      // 1) l'utente modifica il proprio profilo "innocuo" (punti, ruolo,
+      //    email, referral restano di competenza server-side / Cloud
+      //    Function con Admin SDK, che bypassa queste regole);
+      // 2) le transazioni di creazione/adesione a una lega incrementano
+      //    leagueCount di esattamente 1 e nient'altro.
+      allow update: if isOwner(userId) && (
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['firstName', 'lastName', 'photoUrl', 'updatedAt'])
+        ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leagueCount', 'updatedAt'])
+          && request.resource.data.leagueCount == currentLeagueCount() + 1)
+      );
 
       allow delete: if false;
     }
 
-    // predictions/{userId}_{matchId} — un documento per coppia utente/partita.
+    // predictions/{userId}_{matchId} — un documento per coppia utente/partita,
+    // parte della "schedina" dell'utente per una giornata. Un solo mercato
+    // per pronostico (result1x2 | goalNoGoal | overUnder25 | exactScore),
+    // coerente con la UI che fa scegliere un tipo di pronostico a partita.
+    //
+    // Il pronostico richiede che l'utente faccia parte di almeno una lega
+    // (regola di prodotto: "niente schedina senza lega"), verificato qui
+    // leggendo `users/{uid}.leagueCount`, che è scrivibile SOLO dalle
+    // transazioni di creazione/adesione lega (vedi regola `users` sopra) —
+    // quindi non è un valore che il client possa falsificare a piacere.
     //
     // NOTA IMPORTANTE sul blocco al kickoff: qui sotto valida solo la forma
-    // dei dati e la proprietà del documento. Le partite (mock in questa
-    // fase, Phase 3) non sono ancora sincronizzate su Firestore, quindi
-    // queste regole NON possono verificare server-side se il kickoff è già
-    // passato — quel controllo esiste solo lato client (vedi
-    // PredictionRepository/Match.isPredictionOpen) e non è sufficiente da
-    // solo, esattamente come segnalato nel piano di progetto. L'enforcement
-    // realmente sicuro (via Cloud Function o lettura del documento
-    // `matches/{matchId}`) arriva nella Phase 9 insieme alle Cloud Functions.
+    // dei dati, la proprietà del documento e l'appartenenza a una lega. Le
+    // partite (mock in questa fase, Phase 3) non sono ancora sincronizzate
+    // su Firestore, quindi queste regole NON possono verificare server-side
+    // se il kickoff è già passato — quel controllo esiste solo lato client
+    // (vedi PredictionRepository/Match.isPredictionOpen) e non è
+    // sufficiente da solo, esattamente come segnalato nel piano di
+    // progetto. L'enforcement realmente sicuro (via Cloud Function o
+    // lettura del documento `matches/{matchId}`) arriva nella Phase 9.
     match /predictions/{predictionId} {
+      function hasLeague() {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.leagueCount > 0;
+      }
+
       function isValidPredictionWrite() {
         let data = request.resource.data;
         return data.userId == request.auth.uid
           && predictionId == request.auth.uid + '_' + data.matchId
+          && data.market in ['result1x2', 'goalNoGoal', 'overUnder25', 'exactScore']
+          && (!('result1x2Value' in data) || data.result1x2Value == null || data.result1x2Value in ['1', 'X', '2'])
+          && (!('goalNoGoalValue' in data) || data.goalNoGoalValue == null || data.goalNoGoalValue is bool)
+          && (!('overUnder25Value' in data) || data.overUnder25Value == null || data.overUnder25Value is bool)
           && (!('exactHomeScore' in data) || data.exactHomeScore == null ||
               (data.exactHomeScore is int && data.exactHomeScore >= 0 && data.exactHomeScore <= 20))
           && (!('exactAwayScore' in data) || data.exactAwayScore == null ||
-              (data.exactAwayScore is int && data.exactAwayScore >= 0 && data.exactAwayScore <= 20))
-          && (!('result1x2' in data) || data.result1x2 == null || data.result1x2 in ['1', 'X', '2']);
+              (data.exactAwayScore is int && data.exactAwayScore >= 0 && data.exactAwayScore <= 20));
       }
 
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && isValidPredictionWrite();
+      allow create: if isSignedIn() && hasLeague() && isValidPredictionWrite();
       allow update: if isSignedIn()
         && resource.data.userId == request.auth.uid
         && request.resource.data.matchId == resource.data.matchId
+        && hasLeague()
         && isValidPredictionWrite();
       allow delete: if false;
     }

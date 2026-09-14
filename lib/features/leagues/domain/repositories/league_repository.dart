@@ -16,4 +16,7 @@ abstract class LeagueRepository {
   Stream<List<LeagueMember>> watchMembers(String leagueId);
 
   Stream<List<League>> watchMyLeagues();
+
+  /// Vero se l'utente corrente è membro di almeno una lega.
+  Future<bool> hasAnyLeague();
 }

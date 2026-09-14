@@ -28,6 +28,11 @@ abstract class AppUser with _$AppUser {
     @Default(0) int exactPredictions,
     @Default(0.0) double successRate,
     @Default(true) bool isActive,
+    // Quante leghe l'utente ha creato/a cui ha aderito. Serve a far
+    // rispettare lato server la regola "serve una lega per pronosticare"
+    // (vedi firestore.rules): incrementato solo dalle transazioni di
+    // creazione/adesione a una lega, mai scrivibile liberamente dal client.
+    @Default(0) int leagueCount,
   }) = _AppUser;
 
   const AppUser._();

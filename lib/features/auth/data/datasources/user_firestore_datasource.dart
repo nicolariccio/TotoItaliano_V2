@@ -37,6 +37,7 @@ class UserFirestoreDatasource {
       'exactPredictions': user.exactPredictions,
       'successRate': user.successRate,
       'isActive': user.isActive,
+      'leagueCount': user.leagueCount,
     });
   }
 
@@ -102,6 +103,7 @@ class UserFirestoreDatasource {
       exactPredictions: (data['exactPredictions'] as num?)?.toInt() ?? 0,
       successRate: (data['successRate'] as num?)?.toDouble() ?? 0.0,
       isActive: data['isActive'] as bool? ?? true,
+      leagueCount: (data['leagueCount'] as num?)?.toInt() ?? 0,
     );
   }
 }

@@ -2,11 +2,14 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'prediction.freezed.dart';
 
-/// Il pronostico di un utente per una partita. Un documento per coppia
-/// (utente, partita) — id Firestore: `{userId}_{matchId}`.
-///
-/// Ogni mercato (risultato esatto, 1X2, goal/no goal, over/under) è
-/// indipendente e opzionale: l'utente può compilarne anche solo alcuni.
+/// Per ciascuna partita l'utente sceglie UN solo tipo di pronostico (non
+/// più mercati indipendenti): è la scelta fatta in fase di compilazione
+/// della schedina.
+enum PredictionMarket { result1x2, goalNoGoal, overUnder25, exactScore }
+
+/// Il pronostico di un utente per una partita — un documento per coppia
+/// (utente, partita), id Firestore: `{userId}_{matchId}`. Fa parte della
+/// "schedina" della giornata, salvata in blocco per tutte le partite.
 @freezed
 abstract class Prediction with _$Prediction {
   const factory Prediction({
@@ -15,14 +18,16 @@ abstract class Prediction with _$Prediction {
     required String matchId,
     required String competitionId,
     required String matchdayId,
+    required PredictionMarket market,
+    // Valorizzato solo se market == result1x2: '1' | 'X' | '2'.
+    String? result1x2Value,
+    // Valorizzato solo se market == goalNoGoal: true = GOAL, false = NO GOAL.
+    bool? goalNoGoalValue,
+    // Valorizzato solo se market == overUnder25: true = Over 2.5, false = Under 2.5.
+    bool? overUnder25Value,
+    // Valorizzati solo se market == exactScore.
     int? exactHomeScore,
     int? exactAwayScore,
-    // '1' (casa) | 'X' (pareggio) | '2' (trasferta)
-    String? result1x2,
-    // true = GOAL (entrambe segnano), false = NO GOAL
-    bool? goalNoGoal,
-    // chiavi '1.5' | '2.5' | '3.5', valore true = Over, false = Under
-    Map<String, bool>? overUnder,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _Prediction;

@@ -16,7 +16,6 @@ import '../../features/leagues/presentation/screens/leagues_screen.dart';
 import '../../features/onboarding/presentation/providers/onboarding_provider.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
-import '../../features/predictions/presentation/screens/match_detail_screen.dart';
 import '../../features/predictions/presentation/screens/predictions_screen.dart';
 import '../../features/profile/presentation/screens/prediction_history_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -108,18 +107,7 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(path: RoutePaths.home, builder: (context, state) => const HomeScreen()),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(
-              path: RoutePaths.predictions,
-              builder: (context, state) => const PredictionsScreen(),
-              routes: [
-                GoRoute(
-                  path: RoutePaths.matchDetail,
-                  builder: (context, state) => MatchDetailScreen(
-                    matchId: state.pathParameters['matchId']!,
-                  ),
-                ),
-              ],
-            ),
+            GoRoute(path: RoutePaths.predictions, builder: (context, state) => const PredictionsScreen()),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(path: RoutePaths.leaderboard, builder: (context, state) => const LeaderboardScreen()),

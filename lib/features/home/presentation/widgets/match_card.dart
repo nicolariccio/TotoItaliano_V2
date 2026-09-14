@@ -21,7 +21,7 @@ class MatchCard extends StatelessWidget {
     return Card(
       child: InkWell(
         borderRadius: AppRadii.lgRadius,
-        onTap: () => context.push(RoutePaths.matchDetailPath(match.id)),
+        onTap: () => context.go(RoutePaths.predictions),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -59,7 +59,7 @@ class MatchCard extends StatelessWidget {
                 width: double.infinity,
                 child: isOpen
                     ? ElevatedButton(
-                        onPressed: () => context.push(RoutePaths.matchDetailPath(match.id)),
+                        onPressed: () => context.go(RoutePaths.predictions),
                         child: const Text('PRONOSTICA'),
                       )
                     : OutlinedButton(

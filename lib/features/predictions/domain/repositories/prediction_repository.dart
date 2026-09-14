@@ -1,27 +1,19 @@
-import '../../../../data/models/match.dart';
+import '../../data/datasources/prediction_firestore_datasource.dart';
 import '../entities/prediction.dart';
 
 abstract class PredictionRepository {
-  /// Crea o aggiorna il pronostico dell'utente corrente per [match].
-  ///
-  /// Rifiuta il salvataggio se `match.isPredictionOpen` è falso: è un
-  /// controllo lato client, pensato per una UX immediata (non serve
-  /// attendere il round-trip di rete per sapere che è troppo tardi).
-  /// NON è la protezione reale: quella richiede una verifica server-side
-  /// del kickoff (Cloud Function — Phase 9), perché un client compromesso
-  /// potrebbe alterare l'orologio locale o chiamare Firestore direttamente.
-  Future<void> savePrediction({
-    required Match match,
-    int? exactHomeScore,
-    int? exactAwayScore,
-    String? result1x2,
-    bool? goalNoGoal,
-    Map<String, bool>? overUnder,
-  });
+  /// Salva l'intera schedina (uno o più pick, uno per partita) in
+  /// un'unica scrittura atomica. Rifiuta se l'utente non fa parte di
+  /// almeno una lega, o se [picks] contiene una partita già bloccata:
+  /// entrambi controlli lato client, per una UX immediata — la vera
+  /// protezione è nelle Security Rules (vedi PredictionRepositoryImpl).
+  Future<void> saveSchedina(List<PredictionPick> picks);
 
   Future<Prediction?> getPrediction(String matchId);
 
   Stream<Prediction?> watchPrediction(String matchId);
 
   Stream<List<Prediction>> watchMyPredictions();
+
+  Stream<List<Prediction>> watchMyPredictionsForMatchday(String matchdayId);
 }

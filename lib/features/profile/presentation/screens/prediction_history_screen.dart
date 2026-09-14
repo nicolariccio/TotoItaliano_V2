@@ -11,17 +11,6 @@ import '../../../../data/scoring/scoring_engine.dart';
 import '../../../predictions/domain/entities/prediction.dart';
 import '../../../predictions/presentation/providers/prediction_providers.dart';
 
-bool? _overUnderCorrect(
-  Map<String, bool>? officialOverUnder,
-  MapEntry<String, bool> predictedEntry,
-  bool isFinished,
-) {
-  if (!isFinished || officialOverUnder == null) return null;
-  final officialValue = officialOverUnder[predictedEntry.key];
-  if (officialValue == null) return null;
-  return officialValue == predictedEntry.value;
-}
-
 class PredictionHistoryScreen extends ConsumerWidget {
   const PredictionHistoryScreen({super.key});
 
@@ -41,7 +30,7 @@ class PredictionHistoryScreen extends ConsumerWidget {
           if (predictions.isEmpty) {
             return const AppEmptyView(
               title: 'Nessun pronostico ancora',
-              subtitle: 'I pronostici che salvi appariranno qui.',
+              subtitle: 'I pronostici che salvi nella schedina appariranno qui.',
             );
           }
           final sorted = [...predictions]..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -83,12 +72,24 @@ class _PredictionCard extends StatelessWidget {
   final Prediction prediction;
   final Match match;
 
+  String get _pickLabel {
+    switch (prediction.market) {
+      case PredictionMarket.result1x2:
+        return '1X2: ${prediction.result1x2Value ?? '-'}';
+      case PredictionMarket.goalNoGoal:
+        return prediction.goalNoGoalValue == true ? 'GOAL' : 'NO GOAL';
+      case PredictionMarket.overUnder25:
+        return prediction.overUnder25Value == true ? 'Over 2.5' : 'Under 2.5';
+      case PredictionMarket.exactScore:
+        return 'Pronostico ${prediction.exactHomeScore ?? '-'}-${prediction.exactAwayScore ?? '-'}';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isFinished = match.status == MatchStatus.finished;
-    final breakdown = isFinished ? ScoringEngine.calculate(prediction: prediction, match: match) : null;
-    final officialOverUnder = match.overUnder;
+    final result = isFinished ? ScoringEngine.calculate(prediction: prediction, match: match) : null;
 
     return Card(
       child: Padding(
@@ -105,10 +106,10 @@ class _PredictionCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (breakdown != null)
+                if (result != null)
                   PillBadge(
-                    label: '+${breakdown.total}',
-                    color: breakdown.total > 0 ? AppColors.success : AppColors.darkBorder,
+                    label: '+${result.points}',
+                    color: result.points > 0 ? AppColors.success : AppColors.darkBorder,
                   )
                 else
                   const PillBadge(label: 'IN ATTESA', color: AppColors.darkBorder, icon: Icons.schedule_rounded),
@@ -117,56 +118,19 @@ class _PredictionCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(DateFormatter.matchKickoff(match.kickoff), style: theme.textTheme.bodySmall),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (prediction.exactHomeScore != null && prediction.exactAwayScore != null)
-                  _PickChip(
-                    label: 'Pronostico ${prediction.exactHomeScore}-${prediction.exactAwayScore}',
-                    correct: breakdown?.exactScoreCorrect,
-                  ),
-                if (prediction.result1x2 != null)
-                  _PickChip(label: '1X2: ${prediction.result1x2}', correct: breakdown?.result1x2Correct),
-                if (prediction.goalNoGoal != null)
-                  _PickChip(
-                    label: prediction.goalNoGoal! ? 'GOAL' : 'NO GOAL',
-                    correct: breakdown?.goalNoGoalCorrect,
-                  ),
-                for (final entry in (prediction.overUnder ?? const <String, bool>{}).entries)
-                  _PickChip(
-                    label: '${entry.value ? 'Over' : 'Under'} ${entry.key}',
-                    correct: _overUnderCorrect(officialOverUnder, entry, isFinished),
-                  ),
-              ],
+            PillBadge(
+              label: _pickLabel,
+              color: result == null
+                  ? AppColors.darkBorder
+                  : (result.correct ? AppColors.success : AppColors.error).withValues(alpha: 0.85),
             ),
             if (isFinished) ...[
               const SizedBox(height: 12),
-              Text(
-                'Risultato: ${match.homeScore} - ${match.awayScore}',
-                style: theme.textTheme.bodySmall,
-              ),
+              Text('Risultato: ${match.homeScore} - ${match.awayScore}', style: theme.textTheme.bodySmall),
             ],
           ],
         ),
       ),
     );
-  }
-}
-
-class _PickChip extends StatelessWidget {
-  const _PickChip({required this.label, required this.correct});
-
-  final String label;
-  final bool? correct;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color color = correct == null
-        ? AppColors.darkBorder
-        : correct!
-            ? AppColors.success
-            : AppColors.error;
-    return PillBadge(label: label, color: color.withValues(alpha: correct == null ? 1 : 0.85));
   }
 }

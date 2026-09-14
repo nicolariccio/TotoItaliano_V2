@@ -15,6 +15,20 @@ class LeagueFirestoreDatasource {
   CollectionReference<Map<String, dynamic>> _members(String leagueId) =>
       _leagues.doc(leagueId).collection(FirestorePaths.leagueMembersSubcollection);
 
+  DocumentReference<Map<String, dynamic>> _userRef(String userId) =>
+      _firestore.collection(FirestorePaths.users).doc(userId);
+
+  /// Vero se [userId] è membro di almeno una lega: usato per il gate
+  /// "serve una lega per pronosticare" prima di mostrare la schedina.
+  Future<bool> hasAnyLeague(String userId) async {
+    final snapshot = await _firestore
+        .collectionGroup(FirestorePaths.leagueMembersSubcollection)
+        .where('userId', isEqualTo: userId)
+        .limit(1)
+        .get();
+    return snapshot.docs.isNotEmpty;
+  }
+
   Future<bool> isInviteCodeTaken(String inviteCode) async {
     final snapshot = await _leagues.where('inviteCode', isEqualTo: inviteCode).limit(1).get();
     return snapshot.docs.isNotEmpty;
@@ -48,6 +62,7 @@ class LeagueFirestoreDatasource {
   }) async {
     final leagueRef = _leagues.doc();
     final memberRef = _members(leagueRef.id).doc(ownerId);
+    final userRef = _userRef(ownerId);
 
     await _firestore.runTransaction((transaction) async {
       transaction.set(leagueRef, {
@@ -69,6 +84,10 @@ class LeagueFirestoreDatasource {
         'role': LeagueMemberRole.owner.name,
         'totalPoints': 0,
       });
+      transaction.update(userRef, {
+        'leagueCount': FieldValue.increment(1),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     });
 
     return leagueRef.id;
@@ -84,6 +103,7 @@ class LeagueFirestoreDatasource {
   }) async {
     final leagueRef = _leagues.doc(leagueId);
     final memberRef = _members(leagueId).doc(userId);
+    final userRef = _userRef(userId);
 
     await _firestore.runTransaction((transaction) async {
       final existing = await transaction.get(memberRef);
@@ -99,6 +119,10 @@ class LeagueFirestoreDatasource {
         'totalPoints': 0,
       });
       transaction.update(leagueRef, {'memberCount': FieldValue.increment(1)});
+      transaction.update(userRef, {
+        'leagueCount': FieldValue.increment(1),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     });
   }
 

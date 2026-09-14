@@ -17,9 +17,6 @@ class RoutePaths {
   static const String leagues = '/leagues';
   static const String profile = '/profile';
 
-  static const String matchDetail = 'match/:matchId';
-  static String matchDetailPath(String matchId) => '/predictions/match/$matchId';
-
   static const String leagueDetail = 'league/:leagueId';
   static String leagueDetailPath(String leagueId) => '/leagues/league/$leagueId';
 

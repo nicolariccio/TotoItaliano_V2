@@ -101,4 +101,11 @@ class LeagueRepositoryImpl implements LeagueRepository {
     if (uid == null) return Stream.value(const []);
     return _leagueDatasource.watchMyLeagues(uid);
   }
+
+  @override
+  Future<bool> hasAnyLeague() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return false;
+    return _leagueDatasource.hasAnyLeague(uid);
+  }
 }
