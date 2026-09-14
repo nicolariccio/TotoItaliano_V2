@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,21 +23,17 @@ import '../../features/profile/presentation/screens/settings_screen.dart';
 import 'home_shell.dart';
 import 'route_paths.dart';
 
-/// Trasforma uno [Stream] in un [Listenable] ascoltabile da GoRouter, cosi'
-/// il router puo' ri-valutare `redirect` quando cambia lo stato di auth.
-class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(Stream<dynamic> stream) {
-    notifyListeners();
-    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
-  }
-
-  late final StreamSubscription<dynamic> _subscription;
-
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
-  }
+/// [Listenable] usato come `refreshListenable` di GoRouter.
+///
+/// Deliberatamente NON si iscrive direttamente allo stream Firebase: farlo
+/// creerebbe una seconda subscription indipendente da quella interna di
+/// [authStateChangesProvider], con un ordine di consegna degli eventi non
+/// garantito. `redirect` potrebbe rieseguire leggendo ancora lo stato
+/// precedente (stale) e il router resterebbe bloccato in loop sulla splash.
+/// Notificando da `ref.listen` siamo certi che il provider abbia già
+/// aggiornato il proprio stato quando `redirect` lo rilegge.
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
 }
 
 const List<String> _publicAuthRoutes = [
@@ -49,14 +43,14 @@ const List<String> _publicAuthRoutes = [
 ];
 
 final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
-  final refreshStream = GoRouterRefreshStream(
-    ref.watch(firebaseAuthProvider).authStateChanges(),
-  );
-  ref.onDispose(refreshStream.dispose);
+  final refreshNotifier = _RouterRefreshNotifier();
+  ref.listen(authStateChangesProvider, (previous, next) => refreshNotifier.notify());
+  ref.listen(onboardingCompleteProvider, (previous, next) => refreshNotifier.notify());
+  ref.onDispose(refreshNotifier.dispose);
 
   return GoRouter(
     initialLocation: RoutePaths.splash,
-    refreshListenable: refreshStream,
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
       final authState = ref.read(authStateChangesProvider);
       final bool authLoading = authState.isLoading;
