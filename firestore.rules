@@ -53,11 +53,14 @@ service cloud.firestore {
     }
 
     // competitions/{competitionId} (+ teams/matchdays), matches/{matchId},
-    // standings/{competitionId} — dati calcistici reali sincronizzati da
-    // api-football tramite Cloud Function schedulata (Admin SDK, che
-    // ignora queste regole). Il client li legge soltanto: non li scrive
-    // mai, né direttamente né tramite una Cloud Function invocabile senza
-    // il controllo admin (vedi functions/src/index.ts, syncSerieANow).
+    // standings/{competitionId} — pensate per dati calcistici sincronizzati
+    // da api-football tramite Cloud Function (vedi functions/src/sync.ts).
+    // Al momento QUESTA STRADA NON È ATTIVA: il progetto Firebase resta sul
+    // piano Spark per scelta esplicita dell'utente (le Cloud Functions
+    // richiedono Blaze), quindi l'app legge api-football direttamente dal
+    // client (vedi ApiFootballDataService) e queste collezioni restano
+    // vuote. Le regole restano qui, di sola lettura e mai scrivibili dal
+    // client, pronte per il giorno in cui si riattiva quella strada.
     match /competitions/{competitionId} {
       allow read: if isSignedIn();
       allow write: if false;
@@ -94,18 +97,23 @@ service cloud.firestore {
     // transazioni di creazione/adesione lega (vedi regola `users` sopra) —
     // quindi non è un valore che il client possa falsificare a piacere.
     //
-    // Blocco al kickoff enforcement reale: legge `matches/{matchId}.
-    // predictionLocked`, campo scritto solo dalla Cloud Function di sync
-    // (Admin SDK), quindi non falsificabile dal client. Se la partita non
-    // è (ancora) sincronizzata, il get() fallisce e la regola nega per
-    // default (fail-closed) — coerente con "niente di aperto per errore".
+    // NOTA IMPORTANTE sul blocco al kickoff: qui sotto valida solo la forma
+    // dei dati, la proprietà del documento e l'appartenenza a una lega. Le
+    // partite arrivano da api-football chiamata direttamente dal client
+    // (ApiFootballDataService, piano Spark: vedi nota sopra) e non sono
+    // sincronizzate su Firestore, quindi queste regole NON possono
+    // verificare server-side se il kickoff è già passato — quel controllo
+    // esiste solo lato client (PredictionRepository/Match.isPredictionOpen)
+    // e non è sufficiente da solo: un utente che manomette il client
+    // potrebbe salvare un pronostico dopo il fischio d'inizio. Rischio
+    // accettato esplicitamente dall'utente scegliendo questa architettura
+    // al posto del proxy via Cloud Function; si chiude passando al piano
+    // Blaze e riattivando la strada già pronta in functions/src/sync.ts
+    // (che scrive matches/{matchId}.predictionLocked con l'Admin SDK, non
+    // falsificabile dal client — la regola tornerebbe a leggerlo qui).
     match /predictions/{predictionId} {
       function hasLeague() {
         return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.leagueCount > 0;
-      }
-
-      function matchIsOpen(matchId) {
-        return get(/databases/$(database)/documents/matches/$(matchId)).data.predictionLocked == false;
       }
 
       function isValidPredictionWrite() {
@@ -123,12 +131,11 @@ service cloud.firestore {
       }
 
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && hasLeague() && matchIsOpen(request.resource.data.matchId) && isValidPredictionWrite();
+      allow create: if isSignedIn() && hasLeague() && isValidPredictionWrite();
       allow update: if isSignedIn()
         && resource.data.userId == request.auth.uid
         && request.resource.data.matchId == resource.data.matchId
         && hasLeague()
-        && matchIsOpen(request.resource.data.matchId)
         && isValidPredictionWrite();
       allow delete: if false;
     }

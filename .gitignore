@@ -76,6 +76,10 @@ functions/lib/
 .env.*
 !.env.example
 
+# api-football key per --dart-define-from-file (mai committata: vedi
+# api_football.example.json per il template)
+api_football.json
+
 # Misc
 *.log
 .DS_Store

@@ -3,17 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/competition.dart';
 import '../models/match.dart';
 import '../models/matchday.dart';
-import '../services/firestore_football_data_service.dart';
+import '../services/api_football_data_service.dart';
 import '../services/football_data_service.dart';
 
 /// Unico punto in cui l'app sceglie l'implementazione concreta di
-/// [FootballDataService]. [FirestoreFootballDataService] legge i dati
-/// reali di Serie A sincronizzati da api-football su Firestore da una
-/// Cloud Function (vedi functions/src/sync.ts): il client non chiama mai
-/// api-football direttamente. [MockFootballDataService] resta disponibile
-/// per i test e come implementazione di riferimento dell'interfaccia.
+/// [FootballDataService]. [ApiFootballDataService] chiama api-football
+/// direttamente dal client (progetto Firebase sul piano Spark, niente
+/// Cloud Functions per ora): la API key finisce nel bundle dell'app,
+/// scelta esplicita e documentata in quella classe. [MockFootballDataService]
+/// resta disponibile per i test. Se in futuro si passa al piano Blaze,
+/// [FirestoreFootballDataService] (già scritta, dati sincronizzati da una
+/// Cloud Function in functions/) è pronta a sostituire questa riga.
 final Provider<FootballDataService> footballDataServiceProvider = Provider<FootballDataService>(
-  (ref) => FirestoreFootballDataService(),
+  (ref) => ApiFootballDataService(),
 );
 
 final FutureProvider<List<Competition>> competitionsProvider = FutureProvider<List<Competition>>(
