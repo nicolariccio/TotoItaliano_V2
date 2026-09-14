@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "totoitaliano-web",
+      "runtimeExecutable": "C:\\Users\\nriccio\\flutter\\bin\\flutter.bat",
+      "runtimeArgs": ["run", "-d", "chrome", "--web-port", "5050"],
+      "port": 5050
+    }
+  ]
+}
