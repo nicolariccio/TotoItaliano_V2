@@ -38,10 +38,42 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Tutto il resto (competitions, matches, predictions, leagues, ecc.)
-    // arriva nelle fasi successive insieme alla feature corrispondente:
-    // fino ad allora resta negato di default, il che è più sicuro di una
-    // regola aperta lasciata "per ora".
+    // predictions/{userId}_{matchId} — un documento per coppia utente/partita.
+    //
+    // NOTA IMPORTANTE sul blocco al kickoff: qui sotto valida solo la forma
+    // dei dati e la proprietà del documento. Le partite (mock in questa
+    // fase, Phase 3) non sono ancora sincronizzate su Firestore, quindi
+    // queste regole NON possono verificare server-side se il kickoff è già
+    // passato — quel controllo esiste solo lato client (vedi
+    // PredictionRepository/Match.isPredictionOpen) e non è sufficiente da
+    // solo, esattamente come segnalato nel piano di progetto. L'enforcement
+    // realmente sicuro (via Cloud Function o lettura del documento
+    // `matches/{matchId}`) arriva nella Phase 9 insieme alle Cloud Functions.
+    match /predictions/{predictionId} {
+      function isValidPredictionWrite() {
+        let data = request.resource.data;
+        return data.userId == request.auth.uid
+          && predictionId == request.auth.uid + '_' + data.matchId
+          && (!('exactHomeScore' in data) || data.exactHomeScore == null ||
+              (data.exactHomeScore is int && data.exactHomeScore >= 0 && data.exactHomeScore <= 20))
+          && (!('exactAwayScore' in data) || data.exactAwayScore == null ||
+              (data.exactAwayScore is int && data.exactAwayScore >= 0 && data.exactAwayScore <= 20))
+          && (!('result1x2' in data) || data.result1x2 == null || data.result1x2 in ['1', 'X', '2']);
+      }
+
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidPredictionWrite();
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.matchId == resource.data.matchId
+        && isValidPredictionWrite();
+      allow delete: if false;
+    }
+
+    // Tutto il resto (competitions, matches, leagues, ecc.) arriva nelle
+    // fasi successive insieme alla feature corrispondente: fino ad allora
+    // resta negato di default, il che è più sicuro di una regola aperta
+    // lasciata "per ora".
     match /{document=**} {
       allow read, write: if false;
     }

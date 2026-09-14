@@ -46,3 +46,7 @@ final FutureProvider<List<Match>> currentMatchdayMatchesProvider = FutureProvide
       .getMatches(competitionId: competition.id, matchdayId: matchday.id);
   return matches..sort((a, b) => a.kickoff.compareTo(b.kickoff));
 });
+
+final FutureProviderFamily<Match?, String> matchByIdProvider = FutureProvider.family<Match?, String>(
+  (ref, matchId) => ref.watch(footballDataServiceProvider).getMatch(matchId),
+);
