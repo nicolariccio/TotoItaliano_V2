@@ -1,0 +1,24 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions TotoItaliano — sincronizzazione Serie A da api-football verso Firestore",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.11",
+    "typescript": "^5.6.3"
+  }
+}

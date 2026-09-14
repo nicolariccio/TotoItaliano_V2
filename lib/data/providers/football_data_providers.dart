@@ -3,14 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/competition.dart';
 import '../models/match.dart';
 import '../models/matchday.dart';
+import '../services/firestore_football_data_service.dart';
 import '../services/football_data_service.dart';
-import '../services/mock_football_data_service.dart';
 
 /// Unico punto in cui l'app sceglie l'implementazione concreta di
-/// [FootballDataService]. Sostituire [MockFootballDataService] con un
-/// client per un'API reale in futuro richiede di toccare solo questa riga.
+/// [FootballDataService]. [FirestoreFootballDataService] legge i dati
+/// reali di Serie A sincronizzati da api-football su Firestore da una
+/// Cloud Function (vedi functions/src/sync.ts): il client non chiama mai
+/// api-football direttamente. [MockFootballDataService] resta disponibile
+/// per i test e come implementazione di riferimento dell'interfaccia.
 final Provider<FootballDataService> footballDataServiceProvider = Provider<FootballDataService>(
-  (ref) => MockFootballDataService(),
+  (ref) => FirestoreFootballDataService(),
 );
 
 final FutureProvider<List<Competition>> competitionsProvider = FutureProvider<List<Competition>>(

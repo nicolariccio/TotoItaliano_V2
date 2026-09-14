@@ -1,1 +1,32 @@
-{"firestore":{"rules":"firestore.rules","indexes":"firestore.indexes.json"},"flutter":{"platforms":{"android":{"default":{"projectId":"totoitaliano-aa72e","appId":"1:426909825335:android:c445c7dcd34a21f34e82b2","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"totoitaliano-aa72e","configurations":{"android":"1:426909825335:android:c445c7dcd34a21f34e82b2","ios":"1:426909825335:ios:b6d533ec3109608b4e82b2","web":"1:426909825335:web:a6009844833f5c764e82b2"}}}}}}
+{
+  "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local"],
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
+    }
+  ],
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "totoitaliano-aa72e",
+          "appId": "1:426909825335:android:c445c7dcd34a21f34e82b2",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "totoitaliano-aa72e",
+          "configurations": {
+            "android": "1:426909825335:android:c445c7dcd34a21f34e82b2",
+            "ios": "1:426909825335:ios:b6d533ec3109608b4e82b2",
+            "web": "1:426909825335:web:a6009844833f5c764e82b2"
+          }
+        }
+      }
+    }
+  }
+}
