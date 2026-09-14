@@ -1,0 +1,157 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../../../core/constants/firestore_paths.dart';
+import '../../../../data/models/league.dart';
+import '../../../../data/models/league_member.dart';
+
+class LeagueFirestoreDatasource {
+  LeagueFirestoreDatasource(this._firestore);
+
+  final FirebaseFirestore _firestore;
+
+  CollectionReference<Map<String, dynamic>> get _leagues =>
+      _firestore.collection(FirestorePaths.leagues);
+
+  CollectionReference<Map<String, dynamic>> _members(String leagueId) =>
+      _leagues.doc(leagueId).collection(FirestorePaths.leagueMembersSubcollection);
+
+  Future<bool> isInviteCodeTaken(String inviteCode) async {
+    final snapshot = await _leagues.where('inviteCode', isEqualTo: inviteCode).limit(1).get();
+    return snapshot.docs.isNotEmpty;
+  }
+
+  Future<League?> findByInviteCode(String inviteCode) async {
+    final snapshot = await _leagues.where('inviteCode', isEqualTo: inviteCode).limit(1).get();
+    if (snapshot.docs.isEmpty) return null;
+    return _leagueFromDoc(snapshot.docs.first);
+  }
+
+  Future<League?> getLeague(String leagueId) async {
+    final doc = await _leagues.doc(leagueId).get();
+    return _leagueFromDoc(doc);
+  }
+
+  Future<bool> isMember(String leagueId, String userId) async {
+    final doc = await _members(leagueId).doc(userId).get();
+    return doc.exists;
+  }
+
+  /// Crea la lega e aggiunge automaticamente il proprietario come primo
+  /// membro, in un'unica transazione: o succede tutto o niente.
+  Future<String> createLeague({
+    required String name,
+    String? description,
+    required String ownerId,
+    required String ownerUsername,
+    String? ownerPhotoUrl,
+    required String inviteCode,
+  }) async {
+    final leagueRef = _leagues.doc();
+    final memberRef = _members(leagueRef.id).doc(ownerId);
+
+    await _firestore.runTransaction((transaction) async {
+      transaction.set(leagueRef, {
+        'name': name,
+        'description': description,
+        'ownerId': ownerId,
+        'inviteCode': inviteCode,
+        'imageUrl': null,
+        'createdAt': FieldValue.serverTimestamp(),
+        'isActive': true,
+        'memberCount': 1,
+      });
+      transaction.set(memberRef, {
+        'userId': ownerId,
+        'leagueId': leagueRef.id,
+        'username': ownerUsername,
+        'photoUrl': ownerPhotoUrl,
+        'joinedAt': FieldValue.serverTimestamp(),
+        'role': LeagueMemberRole.owner.name,
+        'totalPoints': 0,
+      });
+    });
+
+    return leagueRef.id;
+  }
+
+  /// Aggiunge [userId] come membro di [leagueId], incrementando
+  /// `memberCount` in modo atomico.
+  Future<void> joinLeague({
+    required String leagueId,
+    required String userId,
+    required String username,
+    String? photoUrl,
+  }) async {
+    final leagueRef = _leagues.doc(leagueId);
+    final memberRef = _members(leagueId).doc(userId);
+
+    await _firestore.runTransaction((transaction) async {
+      final existing = await transaction.get(memberRef);
+      if (existing.exists) return;
+
+      transaction.set(memberRef, {
+        'userId': userId,
+        'leagueId': leagueId,
+        'username': username,
+        'photoUrl': photoUrl,
+        'joinedAt': FieldValue.serverTimestamp(),
+        'role': LeagueMemberRole.member.name,
+        'totalPoints': 0,
+      });
+      transaction.update(leagueRef, {'memberCount': FieldValue.increment(1)});
+    });
+  }
+
+  Stream<List<LeagueMember>> watchMembers(String leagueId) {
+    return _members(leagueId)
+        .orderBy('totalPoints', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(_memberFromDoc).toList());
+  }
+
+  /// Leghe di cui [userId] è membro, tramite collection group query sulle
+  /// subcollection `members` di tutte le leghe.
+  Stream<List<League>> watchMyLeagues(String userId) {
+    return _firestore
+        .collectionGroup(FirestorePaths.leagueMembersSubcollection)
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final leagueIds = snapshot.docs.map((doc) => doc.data()['leagueId'] as String).toSet();
+      final leagues = await Future.wait(leagueIds.map(getLeague));
+      return leagues.whereType<League>().toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    });
+  }
+
+  League? _leagueFromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+    if (data == null) return null;
+    final createdAt = data['createdAt'];
+    return League(
+      id: doc.id,
+      name: data['name'] as String? ?? '',
+      description: data['description'] as String?,
+      ownerId: data['ownerId'] as String? ?? '',
+      inviteCode: data['inviteCode'] as String? ?? '',
+      imageUrl: data['imageUrl'] as String?,
+      createdAt: createdAt is Timestamp ? createdAt.toDate() : DateTime.now(),
+      isActive: data['isActive'] as bool? ?? true,
+      memberCount: (data['memberCount'] as num?)?.toInt() ?? 1,
+    );
+  }
+
+  LeagueMember _memberFromDoc(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+    final joinedAt = data['joinedAt'];
+    return LeagueMember(
+      userId: data['userId'] as String? ?? doc.id,
+      leagueId: data['leagueId'] as String? ?? '',
+      username: data['username'] as String? ?? '',
+      photoUrl: data['photoUrl'] as String?,
+      joinedAt: joinedAt is Timestamp ? joinedAt.toDate() : DateTime.now(),
+      role: data['role'] == 'owner' ? LeagueMemberRole.owner : LeagueMemberRole.member,
+      totalPoints: (data['totalPoints'] as num?)?.toInt() ?? 0,
+    );
+  }
+}

@@ -70,8 +70,58 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Tutto il resto (competitions, matches, leagues, ecc.) arriva nelle
-    // fasi successive insieme alla feature corrispondente: fino ad allora
+    // leagues/{leagueId} — lega privata. "Privata" nel senso che non è
+    // elencata pubblicamente: chi conosce l'invite code può leggerla e
+    // unirsi. Il documento non contiene nulla di sensibile.
+    match /leagues/{leagueId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberCount == 1;
+
+      // Due soli casi ammessi in update:
+      // 1) il proprietario modifica i metadati (non tocca campi immutabili);
+      // 2) chiunque si unisca incrementa memberCount di esattamente 1 e
+      //    nient'altro (è quanto fa la transazione di adesione).
+      allow update: if isSignedIn() && (
+        (resource.data.ownerId == request.auth.uid
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.inviteCode == resource.data.inviteCode
+          && request.resource.data.memberCount == resource.data.memberCount)
+        ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
+          && request.resource.data.memberCount == resource.data.memberCount + 1)
+      );
+
+      allow delete: if false;
+    }
+
+    // leagues/{leagueId}/members/{userId} — dichiarata con il path
+    // ricorsivo `{path=**}` (non annidata dentro `leagues`) perché
+    // `watchMyLeagues` usa una collection GROUP query su `members` per
+    // trovare le leghe di un utente: le regole annidate sotto un match
+    // specifico non si applicano alle query di tipo collection group,
+    // solo a letture/query già ancorate a un leagueId noto.
+    match /{path=**}/members/{userId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.totalPoints == 0;
+
+      // I punti restano di competenza server-side (Cloud Function,
+      // Phase 9): dal client si aggiorna solo il profilo denormalizzato.
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['username', 'photoUrl']);
+
+      allow delete: if false;
+    }
+
+    // Tutto il resto (competitions, matches, ecc.) arriva nelle fasi
+    // successive insieme alla feature corrispondente: fino ad allora
     // resta negato di default, il che è più sicuro di una regola aperta
     // lasciata "per ora".
     match /{document=**} {
