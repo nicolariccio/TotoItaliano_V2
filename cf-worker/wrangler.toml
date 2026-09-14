@@ -1,0 +1,6 @@
+name = "totoitaliano-football-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# Nessuna route/dominio custom necessaria: il piano gratuito espone già
+# https://totoitaliano-football-proxy.<tuo-subdomain>.workers.dev

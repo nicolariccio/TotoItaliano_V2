@@ -10,34 +10,26 @@ import '../models/team_standing.dart';
 import 'football_data_service.dart';
 
 /// Implementazione di [FootballDataService] che chiama api-football
-/// direttamente dal client (nessun backend).
-///
-/// ATTENZIONE — scelta di architettura esplicita dell'utente, non sicura:
-/// la API key (letta da `--dart-define`/`--dart-define-from-file`, vedi
-/// [apiFootballKey]) finisce compilata nel bundle dell'app ed è quindi
-/// estraibile da chiunque analizzi il build. È l'alternativa scelta al
-/// posto del proxy via Cloud Function perché il progetto Firebase resta
-/// sul piano Spark (le Cloud Functions richiedono Blaze). Se in futuro si
-/// passa a Blaze, si può tornare a [FirestoreFootballDataService]
-/// cambiando solo il provider in football_data_providers.dart — il
-/// backend per quella strada (functions/) è già scritto e pronto.
+/// tramite il proxy Cloudflare Worker in cf-worker/ (mai direttamente:
+/// api-sports.io non espone header CORS e blocca ogni fetch dal browser,
+/// verificato in test). Il worker tiene la vera API key come secret
+/// server-side; il client manda solo [apiFootballProxyToken], un token
+/// nostro senza valore economico che il worker verifica prima di
+/// inoltrare la richiesta — non la key reale, quindi anche se estratto
+/// dal bundle il danno massimo è "qualcuno usa il nostro worker", non
+/// "qualcuno ruba l'abbonamento api-football".
 class ApiFootballDataService implements FootballDataService {
-  ApiFootballDataService({http.Client? client, String? apiKey, String? host})
+  ApiFootballDataService({http.Client? client, String? proxyUrl, String? proxyToken})
       : _client = client ?? http.Client(),
-        _apiKey = apiKey ?? apiFootballKey,
-        _host = host ?? apiFootballHost;
+        _proxyUrl = proxyUrl ?? apiFootballProxyUrl,
+        _proxyToken = proxyToken ?? apiFootballProxyToken;
 
-  /// Impostata a build/avvio tramite `--dart-define=API_FOOTBALL_KEY=...`
-  /// oppure `--dart-define-from-file=api_football.json` (vedi
-  /// api_football.example.json, mai committare il file reale con la key).
-  static const String apiFootballKey = String.fromEnvironment('API_FOOTBALL_KEY');
+  /// URL del worker (es. https://totoitaliano-football-proxy.<subdomain>.workers.dev),
+  /// impostato a build/avvio con `--dart-define-from-file=api_football.json`
+  /// (vedi api_football.example.json — il file reale resta fuori da git).
+  static const String apiFootballProxyUrl = String.fromEnvironment('API_FOOTBALL_PROXY_URL');
 
-  /// "v3.football.api-sports.io" per un abbonamento diretto API-SPORTS,
-  /// oppure "api-football-v1.p.rapidapi.com" se sottoscritta via RapidAPI.
-  static const String apiFootballHost = String.fromEnvironment(
-    'API_FOOTBALL_HOST',
-    defaultValue: 'v3.football.api-sports.io',
-  );
+  static const String apiFootballProxyToken = String.fromEnvironment('API_FOOTBALL_PROXY_TOKEN');
 
   static const int _leagueId = 135; // Serie A
   static const int _season = 2026; // stagione 2026/27
@@ -48,8 +40,8 @@ class ApiFootballDataService implements FootballDataService {
   static const Duration _standingsTtl = Duration(minutes: 5);
 
   final http.Client _client;
-  final String _apiKey;
-  final String _host;
+  final String _proxyUrl;
+  final String _proxyToken;
 
   List<Map<String, dynamic>>? _fixturesCache;
   DateTime? _fixturesCacheAt;
@@ -59,14 +51,15 @@ class ApiFootballDataService implements FootballDataService {
   DateTime? _standingsCacheAt;
 
   Future<List<dynamic>> _get(String path, Map<String, dynamic> params) async {
-    final uri = Uri.https(_host, path, params.map((k, v) => MapEntry(k, '$v')));
-    final headers = _host.contains('rapidapi.com')
-        ? {'x-rapidapi-key': _apiKey, 'x-rapidapi-host': _host}
-        : {'x-apisports-key': _apiKey};
+    final base = Uri.parse(_proxyUrl);
+    final uri = base.replace(
+      path: '${base.path}$path',
+      queryParameters: params.map((k, v) => MapEntry(k, '$v')),
+    );
 
-    final response = await _client.get(uri, headers: headers);
+    final response = await _client.get(uri, headers: {'X-Proxy-Token': _proxyToken});
     if (response.statusCode != 200) {
-      throw Exception('api-football $path -> HTTP ${response.statusCode}');
+      throw Exception('api-football proxy $path -> HTTP ${response.statusCode}');
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;

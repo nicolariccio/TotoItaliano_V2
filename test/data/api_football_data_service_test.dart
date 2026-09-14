@@ -99,7 +99,7 @@ void main() {
       return http.Response('not found', 404);
     });
 
-    service = ApiFootballDataService(client: client, apiKey: 'test-key');
+    service = ApiFootballDataService(client: client, proxyUrl: 'https://proxy.test', proxyToken: 'test-token');
   });
 
   test('getMatches converte le fixture finite in Match con esito calcolato', () async {

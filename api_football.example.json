@@ -1,4 +1,4 @@
 {
-  "API_FOOTBALL_KEY": "",
-  "API_FOOTBALL_HOST": "v3.football.api-sports.io"
+  "API_FOOTBALL_PROXY_URL": "https://totoitaliano-football-proxy.YOUR-SUBDOMAIN.workers.dev",
+  "API_FOOTBALL_PROXY_TOKEN": ""
 }
