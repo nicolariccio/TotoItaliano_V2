@@ -14,7 +14,9 @@ class LoginController extends StateNotifier<AsyncValue<void>> {
   Future<void> submit({required String email, required String password}) async {
     state = const AsyncLoading();
     try {
-      await _ref.read(authRepositoryProvider).loginWithEmail(email: email, password: password);
+      await _ref
+          .read(authRepositoryProvider)
+          .loginWithEmail(email: email, password: password);
       state = const AsyncData(null);
     } catch (error, stackTrace) {
       state = AsyncError(AppExceptionMapper.map(error), stackTrace);
@@ -32,5 +34,7 @@ class LoginController extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final StateNotifierProvider<LoginController, AsyncValue<void>> loginControllerProvider =
-    StateNotifierProvider<LoginController, AsyncValue<void>>((ref) => LoginController(ref));
+final StateNotifierProvider<LoginController, AsyncValue<void>>
+    loginControllerProvider =
+    StateNotifierProvider<LoginController, AsyncValue<void>>(
+        (ref) => LoginController(ref));

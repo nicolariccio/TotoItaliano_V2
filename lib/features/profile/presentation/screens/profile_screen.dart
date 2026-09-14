@@ -61,11 +61,15 @@ class _ProfileContent extends ConsumerWidget {
               CircleAvatar(
                 radius: 40,
                 backgroundColor: AppColors.azzurro,
-                backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
+                backgroundImage:
+                    user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
                 child: user.photoUrl == null
                     ? Text(
-                        user.username.isNotEmpty ? user.username[0].toUpperCase() : '?',
-                        style: theme.textTheme.displayMedium?.copyWith(color: Colors.white),
+                        user.username.isNotEmpty
+                            ? user.username[0].toUpperCase()
+                            : '?',
+                        style: theme.textTheme.displayMedium
+                            ?.copyWith(color: Colors.white),
                       )
                     : null,
               ),
@@ -82,9 +86,12 @@ class _ProfileContent extends ConsumerWidget {
             child: Row(
               children: [
                 _StatTile(label: 'Punti', value: '${user.totalPoints}'),
-                _StatTile(label: 'Pronostici', value: '${user.predictionsCount}'),
+                _StatTile(
+                    label: 'Pronostici', value: '${user.predictionsCount}'),
                 _StatTile(label: 'Esatti', value: '${user.exactPredictions}'),
-                _StatTile(label: 'Successo', value: '${(user.successRate * 100).toStringAsFixed(0)}%'),
+                _StatTile(
+                    label: 'Successo',
+                    value: '${(user.successRate * 100).toStringAsFixed(0)}%'),
               ],
             ),
           ),
@@ -99,7 +106,8 @@ class _ProfileContent extends ConsumerWidget {
                 Text('Codice referral', style: theme.textTheme.bodyMedium),
                 Text(
                   user.referralCode,
-                  style: theme.textTheme.titleMedium?.copyWith(color: AppColors.azzurro),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(color: AppColors.azzurro),
                 ),
               ],
             ),
@@ -108,7 +116,8 @@ class _ProfileContent extends ConsumerWidget {
         const SizedBox(height: 16),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.history_rounded, color: AppColors.azzurro),
+            leading:
+                const Icon(Icons.history_rounded, color: AppColors.azzurro),
             title: const Text('I miei pronostici'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => context.push(RoutePaths.predictionHistory),

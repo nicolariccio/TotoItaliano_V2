@@ -19,5 +19,7 @@ class ForgotPasswordController extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final StateNotifierProvider<ForgotPasswordController, AsyncValue<void>> forgotPasswordControllerProvider =
-    StateNotifierProvider<ForgotPasswordController, AsyncValue<void>>((ref) => ForgotPasswordController(ref));
+final StateNotifierProvider<ForgotPasswordController, AsyncValue<void>>
+    forgotPasswordControllerProvider =
+    StateNotifierProvider<ForgotPasswordController, AsyncValue<void>>(
+        (ref) => ForgotPasswordController(ref));

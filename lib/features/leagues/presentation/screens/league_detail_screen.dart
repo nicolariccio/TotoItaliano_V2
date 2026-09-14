@@ -40,12 +40,15 @@ class LeagueDetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (league.description != null && league.description!.isNotEmpty) ...[
-                      Text(league.description!, style: Theme.of(context).textTheme.bodyMedium),
+                    if (league.description != null &&
+                        league.description!.isNotEmpty) ...[
+                      Text(league.description!,
+                          style: Theme.of(context).textTheme.bodyMedium),
                       const SizedBox(height: 12),
                     ],
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         color: AppColors.darkSurfaceElevated,
                         borderRadius: AppRadii.mdRadius,
@@ -57,13 +60,17 @@ class LeagueDetailScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Codice invito', style: Theme.of(context).textTheme.bodySmall),
+                                Text('Codice invito',
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall),
                                 Text(
                                   league.inviteCode,
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
-                                      ?.copyWith(color: AppColors.azzurro, letterSpacing: 1),
+                                      ?.copyWith(
+                                          color: AppColors.azzurro,
+                                          letterSpacing: 1),
                                 ),
                               ],
                             ),
@@ -72,10 +79,13 @@ class LeagueDetailScreen extends ConsumerWidget {
                             icon: const Icon(Icons.copy_rounded),
                             tooltip: 'Copia codice',
                             onPressed: () async {
-                              await Clipboard.setData(ClipboardData(text: league.inviteCode));
+                              await Clipboard.setData(
+                                  ClipboardData(text: league.inviteCode));
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Codice copiato negli appunti.')),
+                                const SnackBar(
+                                    content:
+                                        Text('Codice copiato negli appunti.')),
                               );
                             },
                           ),
@@ -83,7 +93,8 @@ class LeagueDetailScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text('CLASSIFICA DI LEGA', style: Theme.of(context).textTheme.titleMedium),
+                    Text('CLASSIFICA DI LEGA',
+                        style: Theme.of(context).textTheme.titleMedium),
                   ],
                 ),
               ),
@@ -92,7 +103,8 @@ class LeagueDetailScreen extends ConsumerWidget {
                   loading: () => const AppLoadingView(),
                   error: (error, stackTrace) => AppErrorView(
                     message: 'Non è stato possibile caricare i membri.',
-                    onRetry: () => ref.invalidate(leagueMembersProvider(leagueId)),
+                    onRetry: () =>
+                        ref.invalidate(leagueMembersProvider(leagueId)),
                   ),
                   data: (members) => PodiumLeaderboard(
                     emptyTitle: 'Nessun membro ancora',

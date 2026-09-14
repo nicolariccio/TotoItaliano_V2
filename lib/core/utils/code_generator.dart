@@ -11,13 +11,17 @@ class CodeGenerator {
   static final Random _random = Random.secure();
 
   static String _randomChars(int length) {
-    return List.generate(length, (_) => _alphabet[_random.nextInt(_alphabet.length)]).join();
+    return List.generate(
+        length, (_) => _alphabet[_random.nextInt(_alphabet.length)]).join();
   }
 
   /// Codice referral personale, es. "MARIOX7K3".
   static String referralCode({String? seed}) {
-    final String prefix = (seed ?? '').replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toUpperCase();
-    final String base = prefix.isEmpty ? _randomChars(6) : prefix.substring(0, min(prefix.length, 6));
+    final String prefix =
+        (seed ?? '').replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toUpperCase();
+    final String base = prefix.isEmpty
+        ? _randomChars(6)
+        : prefix.substring(0, min(prefix.length, 6));
     return '$base${_randomChars(4)}';
   }
 

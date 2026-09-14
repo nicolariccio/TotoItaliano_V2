@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
@@ -5,8 +6,9 @@ import 'app_radii.dart';
 import 'app_text_styles.dart';
 
 /// Definisce i due [ThemeData] dell'app. Il tema scuro è quello primario
-/// (identità "sport-tech premium"); il chiaro segue le stesse regole di
-/// forma/spaziatura per restare coerente quando il sistema è in light mode.
+/// (identità "sport-tech premium", minimal); il chiaro segue le stesse
+/// regole di forma/spaziatura per restare coerente quando il sistema è in
+/// light mode.
 class AppTheme {
   const AppTheme._();
 
@@ -51,16 +53,33 @@ class AppTheme {
       onSurface: textPrimary,
     );
 
+    // Bordo quasi impercettibile: le card si distinguono per superficie e
+    // ombra soffusa, non per un contorno netto — coerente con il
+    // linguaggio "flat elevated" delle app native minimal.
+    final Color hairline = border.withValues(alpha: 0.6);
+
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: background,
       fontFamily: AppTextStyles.bodyMedium(textPrimary).fontFamily,
+      splashFactory: InkSparkle.splashFactory,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: background,
+        surfaceTintColor: Colors.transparent,
         foregroundColor: textPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: AppTextStyles.headlineMedium(textPrimary),
       ),
@@ -68,31 +87,43 @@ class AppTheme {
         color: surfaceElevated,
         elevation: 0,
         margin: EdgeInsets.zero,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.black.withValues(alpha: 0.3),
         shape: RoundedRectangleBorder(
           borderRadius: AppRadii.lgRadius,
-          side: BorderSide(color: border),
+          side: BorderSide(color: hairline, width: 0.6),
         ),
       ),
-      dividerTheme: DividerThemeData(color: border, thickness: 1, space: 1),
+      dividerTheme: DividerThemeData(color: hairline, thickness: 0.6, space: 1),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.azzurro,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          shape: RoundedRectangleBorder(borderRadius: AppRadii.mdRadius),
+          disabledBackgroundColor: AppColors.azzurro.withValues(alpha: 0.35),
+          disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.pillRadius),
           textStyle: AppTextStyles.labelLarge(Colors.white),
+          elevation: 0,
+        ).copyWith(
+          overlayColor:
+              WidgetStateProperty.all(Colors.white.withValues(alpha: 0.12)),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: textPrimary,
-          side: BorderSide(color: border),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          shape: RoundedRectangleBorder(borderRadius: AppRadii.mdRadius),
+          side: BorderSide(color: hairline),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.pillRadius),
+          textStyle: AppTextStyles.labelLarge(textPrimary),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: AppColors.azzurro),
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.azzurro,
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.pillRadius),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -101,11 +132,11 @@ class AppTheme {
             const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         border: OutlineInputBorder(
           borderRadius: AppRadii.mdRadius,
-          borderSide: BorderSide(color: border),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadii.mdRadius,
-          borderSide: BorderSide(color: border),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadii.mdRadius,
@@ -113,7 +144,11 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: AppRadii.mdRadius,
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: AppRadii.mdRadius,
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
         hintStyle: AppTextStyles.bodyMedium(textSecondary),
         labelStyle: AppTextStyles.bodyMedium(textSecondary),
@@ -126,13 +161,15 @@ class AppTheme {
         elevation: 0,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: surface,
+        backgroundColor: surface.withValues(alpha: 0.86),
+        surfaceTintColor: Colors.transparent,
         indicatorColor: AppColors.azzurro.withValues(alpha: 0.16),
+        elevation: 0,
+        height: 64,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final bool selected = states.contains(WidgetState.selected);
           return AppTextStyles.labelSmall(
-            selected ? AppColors.azzurro : textSecondary,
-          );
+              selected ? AppColors.azzurro : textSecondary);
         }),
       ),
       snackBarTheme: SnackBarThemeData(

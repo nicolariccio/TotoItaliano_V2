@@ -10,7 +10,11 @@ import '../controllers/schedina_state.dart';
 import 'selectable_button.dart';
 
 class SchedinaRow extends StatelessWidget {
-  const SchedinaRow({super.key, required this.match, required this.pick, required this.controller});
+  const SchedinaRow(
+      {super.key,
+      required this.match,
+      required this.pick,
+      required this.controller});
 
   final Match match;
   final PickState pick;
@@ -35,10 +39,12 @@ class SchedinaRow extends StatelessWidget {
                     style: theme.textTheme.labelLarge,
                   ),
                 ),
-                Text(DateFormatter.matchKickoff(match.kickoff), style: theme.textTheme.bodySmall),
+                Text(DateFormatter.matchKickoff(match.kickoff),
+                    style: theme.textTheme.bodySmall),
                 if (!enabled) ...[
                   const SizedBox(width: 8),
-                  const Icon(Icons.lock_outline_rounded, size: 16, color: AppColors.darkTextSecondary),
+                  const Icon(Icons.lock_outline_rounded,
+                      size: 16, color: AppColors.darkTextSecondary),
                 ],
               ],
             ),
@@ -49,34 +55,42 @@ class SchedinaRow extends StatelessWidget {
                   label: '1X2',
                   selected: pick.market == PredictionMarket.result1x2,
                   enabled: enabled,
-                  onTap: () => controller.selectMarket(match.id, PredictionMarket.result1x2),
+                  onTap: () => controller.selectMarket(
+                      match.id, PredictionMarket.result1x2),
                 ),
                 const SizedBox(width: 6),
                 SelectableButton(
                   label: 'GOAL',
                   selected: pick.market == PredictionMarket.goalNoGoal,
                   enabled: enabled,
-                  onTap: () => controller.selectMarket(match.id, PredictionMarket.goalNoGoal),
+                  onTap: () => controller.selectMarket(
+                      match.id, PredictionMarket.goalNoGoal),
                 ),
                 const SizedBox(width: 6),
                 SelectableButton(
                   label: 'U/O 2.5',
                   selected: pick.market == PredictionMarket.overUnder25,
                   enabled: enabled,
-                  onTap: () => controller.selectMarket(match.id, PredictionMarket.overUnder25),
+                  onTap: () => controller.selectMarket(
+                      match.id, PredictionMarket.overUnder25),
                 ),
                 const SizedBox(width: 6),
                 SelectableButton(
                   label: 'ESATTO',
                   selected: pick.market == PredictionMarket.exactScore,
                   enabled: enabled,
-                  onTap: () => controller.selectMarket(match.id, PredictionMarket.exactScore),
+                  onTap: () => controller.selectMarket(
+                      match.id, PredictionMarket.exactScore),
                 ),
               ],
             ),
             if (pick.market != null) ...[
               const SizedBox(height: 10),
-              _ValuePicker(match: match, pick: pick, controller: controller, enabled: enabled),
+              _ValuePicker(
+                  match: match,
+                  pick: pick,
+                  controller: controller,
+                  enabled: enabled),
             ],
           ],
         ),
@@ -86,7 +100,11 @@ class SchedinaRow extends StatelessWidget {
 }
 
 class _ValuePicker extends StatelessWidget {
-  const _ValuePicker({required this.match, required this.pick, required this.controller, required this.enabled});
+  const _ValuePicker(
+      {required this.match,
+      required this.pick,
+      required this.controller,
+      required this.enabled});
 
   final Match match;
   final PickState pick;
@@ -167,14 +185,16 @@ class _ValuePicker extends StatelessWidget {
               label: match.homeTeam.shortName,
               value: pick.exactHomeScore,
               enabled: enabled,
-              onChanged: (v) => controller.setExactScore(match.id, home: v, away: pick.exactAwayScore),
+              onChanged: (v) => controller.setExactScore(match.id,
+                  home: v, away: pick.exactAwayScore),
             ),
             const SizedBox(width: 16),
             _MiniStepper(
               label: match.awayTeam.shortName,
               value: pick.exactAwayScore,
               enabled: enabled,
-              onChanged: (v) => controller.setExactScore(match.id, home: pick.exactHomeScore, away: v),
+              onChanged: (v) => controller.setExactScore(match.id,
+                  home: pick.exactHomeScore, away: v),
             ),
           ],
         );
@@ -183,7 +203,11 @@ class _ValuePicker extends StatelessWidget {
 }
 
 class _MiniStepper extends StatelessWidget {
-  const _MiniStepper({required this.label, required this.value, required this.enabled, required this.onChanged});
+  const _MiniStepper(
+      {required this.label,
+      required this.value,
+      required this.enabled,
+      required this.onChanged});
 
   final String label;
   final int? value;
@@ -203,13 +227,19 @@ class _MiniStepper extends StatelessWidget {
             IconButton(
               visualDensity: VisualDensity.compact,
               icon: const Icon(Icons.remove_circle_outline_rounded, size: 20),
-              onPressed: enabled ? () => onChanged(((value ?? 0) - 1).clamp(0, 15)) : null,
+              onPressed: enabled
+                  ? () => onChanged(((value ?? 0) - 1).clamp(0, 15))
+                  : null,
             ),
-            SizedBox(width: 20, child: Text('${value ?? '-'}', textAlign: TextAlign.center)),
+            SizedBox(
+                width: 20,
+                child: Text('${value ?? '-'}', textAlign: TextAlign.center)),
             IconButton(
               visualDensity: VisualDensity.compact,
               icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-              onPressed: enabled ? () => onChanged(((value ?? 0) + 1).clamp(0, 15)) : null,
+              onPressed: enabled
+                  ? () => onChanged(((value ?? 0) + 1).clamp(0, 15))
+                  : null,
             ),
           ],
         ),
@@ -226,7 +256,9 @@ class PickSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (pick.market == null) return const PillBadge(label: 'Non pronosticato', color: AppColors.darkBorder);
+    if (pick.market == null)
+      return const PillBadge(
+          label: 'Non pronosticato', color: AppColors.darkBorder);
     return PillBadge(label: _label(pick), color: AppColors.azzurro);
   }
 

@@ -14,7 +14,8 @@ abstract class AuthRepository {
     String? referralCode,
   });
 
-  Future<void> loginWithEmail({required String email, required String password});
+  Future<void> loginWithEmail(
+      {required String email, required String password});
 
   /// Ritorna `true` se è stato creato un nuovo profilo (primo accesso).
   Future<bool> signInWithGoogle();

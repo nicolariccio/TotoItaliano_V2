@@ -58,6 +58,10 @@ class _CountdownTimerState extends State<CountdownTimer> {
             '${minutes.toString().padLeft(2, '0')}:'
             '${seconds.toString().padLeft(2, '0')}';
 
-    return Text(label, style: widget.style);
+    return Text(
+      label,
+      style: widget.style
+          ?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+    );
   }
 }

@@ -4,7 +4,11 @@ import 'package:flutter/foundation.dart';
 /// serve per disegnare podio + lista, indipendentemente dalla fonte dati.
 @immutable
 class RankedEntry {
-  const RankedEntry({required this.id, required this.username, this.photoUrl, required this.points});
+  const RankedEntry(
+      {required this.id,
+      required this.username,
+      this.photoUrl,
+      required this.points});
 
   final String id;
   final String username;

@@ -18,8 +18,11 @@ class SchedinaController extends StateNotifier<SchedinaState> {
   Future<void> _load() async {
     try {
       final matchday = await _ref.read(currentMatchdayProvider.future);
-      final predictions = await _ref.read(myPredictionsForMatchdayProvider(matchday.id).future);
-      final picks = {for (final p in predictions) p.matchId: PickState.fromPrediction(p)};
+      final predictions =
+          await _ref.read(myPredictionsForMatchdayProvider(matchday.id).future);
+      final picks = {
+        for (final p in predictions) p.matchId: PickState.fromPrediction(p)
+      };
       state = state.copyWith(picks: picks, isLoading: false);
     } catch (_) {
       // Nessun pronostico pregresso caricabile: si parte da una schedina
@@ -37,7 +40,8 @@ class SchedinaController extends StateNotifier<SchedinaState> {
     );
   }
 
-  void selectMarket(String matchId, PredictionMarket market) => _update(matchId, (p) => p.withMarket(market));
+  void selectMarket(String matchId, PredictionMarket market) =>
+      _update(matchId, (p) => p.withMarket(market));
 
   void setResult1x2(String matchId, String value) =>
       _update(matchId, (p) => p.copyWith(result1x2Value: value));
@@ -54,7 +58,8 @@ class SchedinaController extends StateNotifier<SchedinaState> {
       );
 
   Future<void> save(List<Match> matches) async {
-    state = state.copyWith(isSaving: true, clearError: true, savedSuccessfully: false);
+    state = state.copyWith(
+        isSaving: true, clearError: true, savedSuccessfully: false);
     try {
       final picks = <PredictionPick>[];
       for (final match in matches) {
@@ -78,10 +83,13 @@ class SchedinaController extends StateNotifier<SchedinaState> {
       await _ref.read(predictionRepositoryProvider).saveSchedina(picks);
       state = state.copyWith(isSaving: false, savedSuccessfully: true);
     } catch (error) {
-      state = state.copyWith(isSaving: false, errorMessage: AppExceptionMapper.map(error).message);
+      state = state.copyWith(
+          isSaving: false, errorMessage: AppExceptionMapper.map(error).message);
     }
   }
 }
 
-final StateNotifierProvider<SchedinaController, SchedinaState> schedinaControllerProvider =
-    StateNotifierProvider<SchedinaController, SchedinaState>((ref) => SchedinaController(ref));
+final StateNotifierProvider<SchedinaController, SchedinaState>
+    schedinaControllerProvider =
+    StateNotifierProvider<SchedinaController, SchedinaState>(
+        (ref) => SchedinaController(ref));

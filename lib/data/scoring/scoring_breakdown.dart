@@ -6,7 +6,8 @@ import '../../features/predictions/domain/entities/prediction.dart';
 /// dall'utente) e il risultato ufficiale della partita.
 @immutable
 class ScoringResult {
-  const ScoringResult({required this.market, required this.correct, required this.points});
+  const ScoringResult(
+      {required this.market, required this.correct, required this.points});
 
   final PredictionMarket market;
   final bool correct;

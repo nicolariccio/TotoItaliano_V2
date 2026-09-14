@@ -43,7 +43,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               alignment: Alignment.topRight,
               child: TextButton(
                 onPressed: _finish,
-                child: const Text('Salta', style: TextStyle(color: AppColors.darkTextSecondary)),
+                child: const Text('Salta',
+                    style: TextStyle(color: AppColors.darkTextSecondary)),
               ),
             ),
             Expanded(
@@ -58,7 +59,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       return SingleChildScrollView(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          constraints:
+                              BoxConstraints(minHeight: constraints.maxHeight),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -69,7 +71,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                   gradient: AppColors.heroGradient,
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(page.icon, size: 56, color: Colors.white),
+                                child: Icon(page.icon,
+                                    size: 56, color: Colors.white),
                               ),
                               const SizedBox(height: 40),
                               Text(

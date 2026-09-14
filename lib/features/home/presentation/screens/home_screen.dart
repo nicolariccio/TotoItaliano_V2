@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routing/route_paths.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/countdown_timer.dart';
+import '../../../../core/widgets/fade_slide_in.dart';
 import '../../../../core/widgets/gradient_card.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../../data/models/match.dart';
@@ -22,9 +23,11 @@ class HomeScreen extends ConsumerWidget {
     final matchdayAsync = ref.watch(currentMatchdayProvider);
     final matchesAsync = ref.watch(currentMatchdayMatchesProvider);
 
-    final bool isLoading =
-        competitionAsync.isLoading || matchdayAsync.isLoading || matchesAsync.isLoading;
-    final Object? error = competitionAsync.error ?? matchdayAsync.error ?? matchesAsync.error;
+    final bool isLoading = competitionAsync.isLoading ||
+        matchdayAsync.isLoading ||
+        matchesAsync.isLoading;
+    final Object? error =
+        competitionAsync.error ?? matchdayAsync.error ?? matchesAsync.error;
 
     return Scaffold(
       body: SafeArea(
@@ -39,7 +42,8 @@ class HomeScreen extends ConsumerWidget {
               ? const AppLoadingView()
               : error != null
                   ? AppErrorView(
-                      message: 'Non è stato possibile caricare i dati delle partite.',
+                      message:
+                          'Non è stato possibile caricare i dati delle partite.',
                       onRetry: () {
                         ref.invalidate(competitionsProvider);
                         ref.invalidate(matchdaysProvider);
@@ -50,7 +54,8 @@ class HomeScreen extends ConsumerWidget {
                       competitionLabel:
                           '${competitionAsync.value!.name} ${competitionAsync.value!.season}',
                       matchdayNumber: matchdayAsync.value!.number,
-                      predictionDeadline: matchdayAsync.value!.predictionDeadline,
+                      predictionDeadline:
+                          matchdayAsync.value!.predictionDeadline,
                       matches: matchesAsync.value!,
                     ),
         ),
@@ -85,7 +90,8 @@ class _HomeContent extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.sports_soccer_rounded, color: AppColors.azzurro, size: 28),
+                const Icon(Icons.sports_soccer_rounded,
+                    color: AppColors.azzurro, size: 28),
                 const SizedBox(width: 8),
                 Text(AppConstants.appName, style: theme.textTheme.titleLarge),
               ],
@@ -106,7 +112,8 @@ class _HomeContent extends ConsumerWidget {
                       userAsync.value?.username.isNotEmpty == true
                           ? userAsync.value!.username[0].toUpperCase()
                           : '?',
-                      style: theme.textTheme.labelSmall?.copyWith(color: Colors.white),
+                      style: theme.textTheme.labelSmall
+                          ?.copyWith(color: Colors.white),
                     ),
                   ),
                 ),
@@ -115,30 +122,36 @@ class _HomeContent extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 20),
-        GradientCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                competitionLabel.toUpperCase(),
-                style: theme.textTheme.labelLarge?.copyWith(color: Colors.white70),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'GIORNATA $matchdayNumber',
-                style: theme.textTheme.displayMedium?.copyWith(color: Colors.white),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Chiusura pronostici tra',
-                style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
-              ),
-              CountdownTimer(
-                target: predictionDeadline,
-                style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white),
-                expiredLabel: 'Pronostici chiusi',
-              ),
-            ],
+        FadeSlideIn(
+          child: GradientCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  competitionLabel.toUpperCase(),
+                  style: theme.textTheme.labelLarge
+                      ?.copyWith(color: Colors.white70),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'GIORNATA $matchdayNumber',
+                  style: theme.textTheme.displayMedium
+                      ?.copyWith(color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Chiusura pronostici tra',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: Colors.white70),
+                ),
+                CountdownTimer(
+                  target: predictionDeadline,
+                  style: theme.textTheme.headlineMedium
+                      ?.copyWith(color: Colors.white),
+                  expiredLabel: 'Pronostici chiusi',
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -150,9 +163,12 @@ class _HomeContent extends ConsumerWidget {
             subtitle: 'Torna più tardi per la prossima giornata.',
           )
         else
-          ...matches.map((match) => Padding(
+          ...matches.asMap().entries.map((entry) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: MatchCard(match: match),
+                child: FadeSlideIn(
+                  delay: Duration(milliseconds: 60 * entry.key.clamp(0, 8)),
+                  child: MatchCard(match: entry.value),
+                ),
               )),
       ],
     );

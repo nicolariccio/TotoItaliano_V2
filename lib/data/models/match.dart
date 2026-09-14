@@ -39,5 +39,6 @@ abstract class Match with _$Match {
   /// client lo usa solo per l'interfaccia (abilitare/disabilitare la CTA),
   /// MAI come unica fonte di verità — il blocco reale è imposto lato
   /// backend confrontando il server timestamp con il kickoff.
-  bool get isPredictionOpen => !predictionLocked && DateTime.now().isBefore(kickoff);
+  bool get isPredictionOpen =>
+      !predictionLocked && DateTime.now().isBefore(kickoff);
 }

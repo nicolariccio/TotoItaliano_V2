@@ -8,7 +8,8 @@ import '../../domain/repositories/prediction_repository.dart';
 import '../datasources/prediction_firestore_datasource.dart';
 
 class PredictionRepositoryImpl implements PredictionRepository {
-  PredictionRepositoryImpl(this._auth, this._datasource, this._leagueRepository);
+  PredictionRepositoryImpl(
+      this._auth, this._datasource, this._leagueRepository);
 
   final FirebaseAuth _auth;
   final PredictionFirestoreDatasource _datasource;
@@ -27,7 +28,8 @@ class PredictionRepositoryImpl implements PredictionRepository {
       final userId = _requireUserId();
 
       if (!await _leagueRepository.hasAnyLeague()) {
-        throw const ValidationFailure('Devi far parte di una lega per salvare la schedina.');
+        throw const ValidationFailure(
+            'Devi far parte di una lega per salvare la schedina.');
       }
 
       await _datasource.saveSchedina(userId, picks);

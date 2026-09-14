@@ -16,7 +16,8 @@ Future<void> main() async {
   // `flutterfire configure`, l'inizializzazione fallisce: l'app resta
   // comunque avviabile per lavorare su UI/routing non legati a Firebase.
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
   } catch (error) {
     debugPrint('Firebase non inizializzato: $error');
   }

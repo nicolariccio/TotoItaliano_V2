@@ -23,8 +23,10 @@ class SelectableButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final Color background = selected ? AppColors.azzurro : theme.colorScheme.surface;
-    final Color foreground = selected ? Colors.white : theme.colorScheme.onSurface;
+    final Color background =
+        selected ? AppColors.azzurro : theme.colorScheme.surface;
+    final Color foreground =
+        selected ? Colors.white : theme.colorScheme.onSurface;
 
     return Expanded(
       child: Opacity(
@@ -40,7 +42,8 @@ class SelectableButton extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: AppRadii.mdRadius,
-                border: Border.all(color: selected ? AppColors.azzurro : AppColors.darkBorder),
+                border: Border.all(
+                    color: selected ? AppColors.azzurro : AppColors.darkBorder),
               ),
               child: Text(
                 label,

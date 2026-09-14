@@ -14,7 +14,8 @@ final Provider<LeagueFirestoreDatasource> leagueFirestoreDatasourceProvider =
   (ref) => LeagueFirestoreDatasource(FirebaseFirestore.instance),
 );
 
-final Provider<LeagueRepository> leagueRepositoryProvider = Provider<LeagueRepository>(
+final Provider<LeagueRepository> leagueRepositoryProvider =
+    Provider<LeagueRepository>(
   (ref) => LeagueRepositoryImpl(
     ref.watch(firebaseAuthProvider),
     ref.watch(leagueFirestoreDatasourceProvider),
@@ -22,12 +23,14 @@ final Provider<LeagueRepository> leagueRepositoryProvider = Provider<LeagueRepos
   ),
 );
 
-final StreamProvider<List<League>> myLeaguesProvider = StreamProvider<List<League>>((ref) {
+final StreamProvider<List<League>> myLeaguesProvider =
+    StreamProvider<List<League>>((ref) {
   ref.watch(authStateChangesProvider);
   return ref.watch(leagueRepositoryProvider).watchMyLeagues();
 });
 
-final FutureProviderFamily<League?, String> leagueByIdProvider = FutureProvider.family<League?, String>(
+final FutureProviderFamily<League?, String> leagueByIdProvider =
+    FutureProvider.family<League?, String>(
   (ref, leagueId) => ref.watch(leagueRepositoryProvider).getLeague(leagueId),
 );
 

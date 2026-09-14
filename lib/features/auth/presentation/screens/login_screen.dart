@@ -54,7 +54,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 32),
-                Text('Bentornato', style: Theme.of(context).textTheme.displayMedium),
+                Text('Bentornato',
+                    style: Theme.of(context).textTheme.displayMedium),
                 const SizedBox(height: 4),
                 Text(
                   'Accedi per continuare a pronosticare.',
@@ -76,11 +77,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   decoration: InputDecoration(
                     labelText: 'Password',
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(_obscurePassword
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                  validator: (value) => Validators.required(value, field: 'Password'),
+                  validator: (value) =>
+                      Validators.required(value, field: 'Password'),
                 ),
                 Align(
                   alignment: Alignment.centerRight,
@@ -96,7 +101,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Text('ACCEDI'),
                 ),
@@ -104,7 +110,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 OutlinedButton.icon(
                   onPressed: isLoading
                       ? null
-                      : () => ref.read(loginControllerProvider.notifier).submitWithGoogle(),
+                      : () => ref
+                          .read(loginControllerProvider.notifier)
+                          .submitWithGoogle(),
                   icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
                   label: const Text('Continua con Google'),
                 ),

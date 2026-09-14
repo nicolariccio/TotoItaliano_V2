@@ -24,13 +24,16 @@ class ScoringEngine {
     required Match match,
     ScoringConfig config = const ScoringConfig(),
   }) {
-    if (match.status != MatchStatus.finished || match.homeScore == null || match.awayScore == null) {
+    if (match.status != MatchStatus.finished ||
+        match.homeScore == null ||
+        match.awayScore == null) {
       return null;
     }
 
     switch (prediction.market) {
       case PredictionMarket.exactScore:
-        final correct = prediction.exactHomeScore == match.homeScore && prediction.exactAwayScore == match.awayScore;
+        final correct = prediction.exactHomeScore == match.homeScore &&
+            prediction.exactAwayScore == match.awayScore;
         return ScoringResult(
           market: prediction.market,
           correct: correct,
@@ -38,11 +41,16 @@ class ScoringEngine {
         );
 
       case PredictionMarket.result1x2:
-        final correct = prediction.result1x2Value == _winnerToResultCode(match.winner);
-        return ScoringResult(market: prediction.market, correct: correct, points: correct ? config.resultPoints : 0);
+        final correct =
+            prediction.result1x2Value == _winnerToResultCode(match.winner);
+        return ScoringResult(
+            market: prediction.market,
+            correct: correct,
+            points: correct ? config.resultPoints : 0);
 
       case PredictionMarket.goalNoGoal:
-        final correct = prediction.goalNoGoalValue != null && prediction.goalNoGoalValue == match.goalNoGoal;
+        final correct = prediction.goalNoGoalValue != null &&
+            prediction.goalNoGoalValue == match.goalNoGoal;
         return ScoringResult(
           market: prediction.market,
           correct: correct,
@@ -51,7 +59,8 @@ class ScoringEngine {
 
       case PredictionMarket.overUnder25:
         final officialOver25 = match.overUnder?['2.5'];
-        final correct = prediction.overUnder25Value != null && prediction.overUnder25Value == officialOver25;
+        final correct = prediction.overUnder25Value != null &&
+            prediction.overUnder25Value == officialOver25;
         return ScoringResult(
           market: prediction.market,
           correct: correct,

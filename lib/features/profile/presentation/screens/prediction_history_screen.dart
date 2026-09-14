@@ -30,15 +30,18 @@ class PredictionHistoryScreen extends ConsumerWidget {
           if (predictions.isEmpty) {
             return const AppEmptyView(
               title: 'Nessun pronostico ancora',
-              subtitle: 'I pronostici che salvi nella schedina appariranno qui.',
+              subtitle:
+                  'I pronostici che salvi nella schedina appariranno qui.',
             );
           }
-          final sorted = [...predictions]..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+          final sorted = [...predictions]
+            ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
           return ListView.separated(
             padding: const EdgeInsets.all(20),
             itemCount: sorted.length,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) => _PredictionHistoryTile(prediction: sorted[index]),
+            itemBuilder: (context, index) =>
+                _PredictionHistoryTile(prediction: sorted[index]),
           );
         },
       ),
@@ -56,7 +59,9 @@ class _PredictionHistoryTile extends ConsumerWidget {
     final matchAsync = ref.watch(matchByIdProvider(prediction.matchId));
 
     return matchAsync.when(
-      loading: () => const Card(child: Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator())),
+      loading: () => const Card(
+          child: Padding(
+              padding: EdgeInsets.all(16), child: LinearProgressIndicator())),
       error: (error, stackTrace) => const SizedBox.shrink(),
       data: (match) {
         if (match == null) return const SizedBox.shrink();
@@ -89,7 +94,9 @@ class _PredictionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isFinished = match.status == MatchStatus.finished;
-    final result = isFinished ? ScoringEngine.calculate(prediction: prediction, match: match) : null;
+    final result = isFinished
+        ? ScoringEngine.calculate(prediction: prediction, match: match)
+        : null;
 
     return Card(
       child: Padding(
@@ -109,24 +116,32 @@ class _PredictionCard extends StatelessWidget {
                 if (result != null)
                   PillBadge(
                     label: '+${result.points}',
-                    color: result.points > 0 ? AppColors.success : AppColors.darkBorder,
+                    color: result.points > 0
+                        ? AppColors.success
+                        : AppColors.darkBorder,
                   )
                 else
-                  const PillBadge(label: 'IN ATTESA', color: AppColors.darkBorder, icon: Icons.schedule_rounded),
+                  const PillBadge(
+                      label: 'IN ATTESA',
+                      color: AppColors.darkBorder,
+                      icon: Icons.schedule_rounded),
               ],
             ),
             const SizedBox(height: 4),
-            Text(DateFormatter.matchKickoff(match.kickoff), style: theme.textTheme.bodySmall),
+            Text(DateFormatter.matchKickoff(match.kickoff),
+                style: theme.textTheme.bodySmall),
             const SizedBox(height: 12),
             PillBadge(
               label: _pickLabel,
               color: result == null
                   ? AppColors.darkBorder
-                  : (result.correct ? AppColors.success : AppColors.error).withValues(alpha: 0.85),
+                  : (result.correct ? AppColors.success : AppColors.error)
+                      .withValues(alpha: 0.85),
             ),
             if (isFinished) ...[
               const SizedBox(height: 12),
-              Text('Risultato: ${match.homeScore} - ${match.awayScore}', style: theme.textTheme.bodySmall),
+              Text('Risultato: ${match.homeScore} - ${match.awayScore}',
+                  style: theme.textTheme.bodySmall),
             ],
           ],
         ),

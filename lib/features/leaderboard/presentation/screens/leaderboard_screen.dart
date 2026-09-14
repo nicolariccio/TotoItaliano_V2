@@ -24,7 +24,11 @@ class LeaderboardScreen extends ConsumerWidget {
         data: (users) => PodiumLeaderboard(
           entries: [
             for (final user in users)
-              RankedEntry(id: user.id, username: user.username, photoUrl: user.photoUrl, points: user.totalPoints),
+              RankedEntry(
+                  id: user.id,
+                  username: user.username,
+                  photoUrl: user.photoUrl,
+                  points: user.totalPoints),
           ],
         ),
       ),

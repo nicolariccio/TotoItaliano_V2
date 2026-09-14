@@ -19,7 +19,8 @@ import 'football_data_service.dart';
 /// dal bundle il danno massimo è "qualcuno usa il nostro worker", non
 /// "qualcuno ruba l'abbonamento api-football".
 class ApiFootballDataService implements FootballDataService {
-  ApiFootballDataService({http.Client? client, String? proxyUrl, String? proxyToken})
+  ApiFootballDataService(
+      {http.Client? client, String? proxyUrl, String? proxyToken})
       : _client = client ?? http.Client(),
         _proxyUrl = proxyUrl ?? apiFootballProxyUrl,
         _proxyToken = proxyToken ?? apiFootballProxyToken;
@@ -27,9 +28,11 @@ class ApiFootballDataService implements FootballDataService {
   /// URL del worker (es. https://totoitaliano-football-proxy.<subdomain>.workers.dev),
   /// impostato a build/avvio con `--dart-define-from-file=api_football.json`
   /// (vedi api_football.example.json — il file reale resta fuori da git).
-  static const String apiFootballProxyUrl = String.fromEnvironment('API_FOOTBALL_PROXY_URL');
+  static const String apiFootballProxyUrl =
+      String.fromEnvironment('API_FOOTBALL_PROXY_URL');
 
-  static const String apiFootballProxyToken = String.fromEnvironment('API_FOOTBALL_PROXY_TOKEN');
+  static const String apiFootballProxyToken =
+      String.fromEnvironment('API_FOOTBALL_PROXY_TOKEN');
 
   static const int _leagueId = 135; // Serie A
 
@@ -65,14 +68,18 @@ class ApiFootballDataService implements FootballDataService {
       queryParameters: params.map((k, v) => MapEntry(k, '$v')),
     );
 
-    final response = await _client.get(uri, headers: {'X-Proxy-Token': _proxyToken});
+    final response =
+        await _client.get(uri, headers: {'X-Proxy-Token': _proxyToken});
     if (response.statusCode != 200) {
-      throw Exception('api-football proxy $path -> HTTP ${response.statusCode}');
+      throw Exception(
+          'api-football proxy $path -> HTTP ${response.statusCode}');
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final errors = body['errors'];
-    final hasErrors = errors is List ? errors.isNotEmpty : (errors is Map && errors.isNotEmpty);
+    final hasErrors = errors is List
+        ? errors.isNotEmpty
+        : (errors is Map && errors.isNotEmpty);
     if (hasErrors) {
       throw Exception('api-football $path error: $errors');
     }
@@ -82,10 +89,13 @@ class ApiFootballDataService implements FootballDataService {
 
   Future<List<Map<String, dynamic>>> _fixtures() async {
     final now = DateTime.now();
-    if (_fixturesCache != null && _fixturesCacheAt != null && now.difference(_fixturesCacheAt!) < _fixturesTtl) {
+    if (_fixturesCache != null &&
+        _fixturesCacheAt != null &&
+        now.difference(_fixturesCacheAt!) < _fixturesTtl) {
       return _fixturesCache!;
     }
-    final raw = await _get('/fixtures', {'league': _leagueId, 'season': _season});
+    final raw =
+        await _get('/fixtures', {'league': _leagueId, 'season': _season});
     _fixturesCache = raw.cast<Map<String, dynamic>>();
     _fixturesCacheAt = now;
     return _fixturesCache!;
@@ -93,7 +103,9 @@ class ApiFootballDataService implements FootballDataService {
 
   Future<List<Map<String, dynamic>>> _teams() async {
     final now = DateTime.now();
-    if (_teamsCache != null && _teamsCacheAt != null && now.difference(_teamsCacheAt!) < _teamsTtl) {
+    if (_teamsCache != null &&
+        _teamsCacheAt != null &&
+        now.difference(_teamsCacheAt!) < _teamsTtl) {
       return _teamsCache!;
     }
     final raw = await _get('/teams', {'league': _leagueId, 'season': _season});
@@ -104,13 +116,18 @@ class ApiFootballDataService implements FootballDataService {
 
   Future<List<Map<String, dynamic>>> _standingsRows() async {
     final now = DateTime.now();
-    if (_standingsCache != null && _standingsCacheAt != null && now.difference(_standingsCacheAt!) < _standingsTtl) {
+    if (_standingsCache != null &&
+        _standingsCacheAt != null &&
+        now.difference(_standingsCacheAt!) < _standingsTtl) {
       return _standingsCache!;
     }
-    final raw = await _get('/standings', {'league': _leagueId, 'season': _season});
+    final raw =
+        await _get('/standings', {'league': _leagueId, 'season': _season});
     final rows = raw.isEmpty
         ? const <dynamic>[]
-        : ((raw.first as Map<String, dynamic>)['league']?['standings'] as List<dynamic>?)?.first as List<dynamic>? ??
+        : ((raw.first as Map<String, dynamic>)['league']?['standings']
+                    as List<dynamic>?)
+                ?.first as List<dynamic>? ??
             const <dynamic>[];
     _standingsCache = rows.cast<Map<String, dynamic>>();
     _standingsCacheAt = now;
@@ -120,10 +137,16 @@ class ApiFootballDataService implements FootballDataService {
   @override
   Future<List<Competition>> getCompetitions() async {
     final fixtures = await _fixtures();
-    final kickoffs = fixtures.map((f) => DateTime.parse(f['fixture']['date'] as String)).toList();
+    final kickoffs = fixtures
+        .map((f) => DateTime.parse(f['fixture']['date'] as String))
+        .toList();
     final now = DateTime.now();
-    final start = kickoffs.isEmpty ? now : kickoffs.reduce((a, b) => a.isBefore(b) ? a : b);
-    final end = kickoffs.isEmpty ? now : kickoffs.reduce((a, b) => a.isAfter(b) ? a : b);
+    final start = kickoffs.isEmpty
+        ? now
+        : kickoffs.reduce((a, b) => a.isBefore(b) ? a : b);
+    final end = kickoffs.isEmpty
+        ? now
+        : kickoffs.reduce((a, b) => a.isAfter(b) ? a : b);
 
     return [
       Competition(
@@ -160,7 +183,8 @@ class ApiFootballDataService implements FootballDataService {
   }
 
   @override
-  Future<List<Match>> getMatches({required String competitionId, String? matchdayId}) async {
+  Future<List<Match>> getMatches(
+      {required String competitionId, String? matchdayId}) async {
     final fixtures = await _fixtures();
     final grouped = _groupByRound(fixtures);
     final matches = <Match>[];
@@ -187,7 +211,8 @@ class ApiFootballDataService implements FootballDataService {
   }
 
   @override
-  Future<List<TeamStanding>> getStandings({required String competitionId}) async {
+  Future<List<TeamStanding>> getStandings(
+      {required String competitionId}) async {
     final rows = await _standingsRows();
     return rows.map((row) {
       final all = row['all'] as Map<String, dynamic>;
@@ -209,12 +234,15 @@ class ApiFootballDataService implements FootballDataService {
   }
 
   @override
-  Future<List<Match>> getResults({required String competitionId, String? matchdayId}) async {
-    final matches = await getMatches(competitionId: competitionId, matchdayId: matchdayId);
+  Future<List<Match>> getResults(
+      {required String competitionId, String? matchdayId}) async {
+    final matches =
+        await getMatches(competitionId: competitionId, matchdayId: matchdayId);
     return matches.where((m) => m.status == MatchStatus.finished).toList();
   }
 
-  Map<int, List<Map<String, dynamic>>> _groupByRound(List<Map<String, dynamic>> fixtures) {
+  Map<int, List<Map<String, dynamic>>> _groupByRound(
+      List<Map<String, dynamic>> fixtures) {
     final grouped = <int, List<Map<String, dynamic>>>{};
     for (final fixture in fixtures) {
       final round = _parseRoundNumber(fixture['league']['round'] as String);
@@ -225,12 +253,18 @@ class ApiFootballDataService implements FootballDataService {
   }
 
   Matchday _matchdayFromRound(int number, List<Map<String, dynamic>> fixtures) {
-    final kickoffs = fixtures.map((f) => DateTime.parse(f['fixture']['date'] as String)).toList();
+    final kickoffs = fixtures
+        .map((f) => DateTime.parse(f['fixture']['date'] as String))
+        .toList();
     final start = kickoffs.reduce((a, b) => a.isBefore(b) ? a : b);
     final end = kickoffs.reduce((a, b) => a.isAfter(b) ? a : b);
-    final statuses = fixtures.map((f) => _mapFixtureStatus(f['fixture']['status']['short'] as String)).toList();
+    final statuses = fixtures
+        .map(
+            (f) => _mapFixtureStatus(f['fixture']['status']['short'] as String))
+        .toList();
     final allFinished = statuses.every((s) => s == MatchStatus.finished);
-    final anyStarted = statuses.any((s) => s != MatchStatus.scheduled) || DateTime.now().isAfter(start);
+    final anyStarted = statuses.any((s) => s != MatchStatus.scheduled) ||
+        DateTime.now().isAfter(start);
 
     return Matchday(
       id: 'md$number',
@@ -238,7 +272,9 @@ class ApiFootballDataService implements FootballDataService {
       number: number,
       startDate: start,
       endDate: end,
-      status: allFinished ? MatchdayStatus.finished : (anyStarted ? MatchdayStatus.active : MatchdayStatus.upcoming),
+      status: allFinished
+          ? MatchdayStatus.finished
+          : (anyStarted ? MatchdayStatus.active : MatchdayStatus.upcoming),
       predictionDeadline: start,
     );
   }
@@ -246,7 +282,8 @@ class ApiFootballDataService implements FootballDataService {
   Match _matchFromFixture(Map<String, dynamic> fixture, String matchdayId) {
     final fixtureData = fixture['fixture'] as Map<String, dynamic>;
     final kickoff = DateTime.parse(fixtureData['date'] as String);
-    final status = _mapFixtureStatus((fixtureData['status'] as Map<String, dynamic>)['short'] as String);
+    final status = _mapFixtureStatus(
+        (fixtureData['status'] as Map<String, dynamic>)['short'] as String);
     final goals = fixture['goals'] as Map<String, dynamic>;
     final homeScore = goals['home'] as int?;
     final awayScore = goals['away'] as int?;
@@ -254,7 +291,9 @@ class ApiFootballDataService implements FootballDataService {
     MatchWinner? winner;
     bool? goalNoGoal;
     Map<String, bool>? overUnder;
-    if (status == MatchStatus.finished && homeScore != null && awayScore != null) {
+    if (status == MatchStatus.finished &&
+        homeScore != null &&
+        awayScore != null) {
       winner = homeScore > awayScore
           ? MatchWinner.home
           : (homeScore < awayScore ? MatchWinner.away : MatchWinner.draw);
@@ -308,14 +347,18 @@ class ApiFootballDataService implements FootballDataService {
   }
 
   String _shortName(String name, [String? code]) {
-    if (code != null && code.trim().isNotEmpty) return code.trim().toUpperCase();
+    if (code != null && code.trim().isNotEmpty)
+      return code.trim().toUpperCase();
     return name.substring(0, name.length.clamp(0, 3)).toUpperCase();
   }
 
   MatchStatus _mapFixtureStatus(String short) {
-    if (short == 'FT' || short == 'AET' || short == 'PEN') return MatchStatus.finished;
-    if (const ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE'].contains(short)) return MatchStatus.live;
-    if (const ['PST', 'CANC', 'ABD', 'AWD', 'WO'].contains(short)) return MatchStatus.postponed;
+    if (short == 'FT' || short == 'AET' || short == 'PEN')
+      return MatchStatus.finished;
+    if (const ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE']
+        .contains(short)) return MatchStatus.live;
+    if (const ['PST', 'CANC', 'ABD', 'AWD', 'WO'].contains(short))
+      return MatchStatus.postponed;
     return MatchStatus.scheduled;
   }
 

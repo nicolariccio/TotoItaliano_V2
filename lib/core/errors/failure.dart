@@ -15,7 +15,8 @@ class NetworkFailure extends Failure {
 }
 
 class TimeoutFailure extends Failure {
-  const TimeoutFailure([super.message = 'La richiesta ha impiegato troppo tempo. Riprova.']);
+  const TimeoutFailure(
+      [super.message = 'La richiesta ha impiegato troppo tempo. Riprova.']);
 }
 
 class AuthFailure extends Failure {
@@ -23,15 +24,18 @@ class AuthFailure extends Failure {
 }
 
 class NotAuthenticatedFailure extends Failure {
-  const NotAuthenticatedFailure([super.message = 'Devi effettuare l\'accesso per continuare.']);
+  const NotAuthenticatedFailure(
+      [super.message = 'Devi effettuare l\'accesso per continuare.']);
 }
 
 class PredictionLockedFailure extends Failure {
-  const PredictionLockedFailure([super.message = 'I pronostici per questa partita sono chiusi.']);
+  const PredictionLockedFailure(
+      [super.message = 'I pronostici per questa partita sono chiusi.']);
 }
 
 class MatchAlreadyStartedFailure extends Failure {
-  const MatchAlreadyStartedFailure([super.message = 'La partita è già iniziata.']);
+  const MatchAlreadyStartedFailure(
+      [super.message = 'La partita è già iniziata.']);
 }
 
 class LeagueNotFoundFailure extends Failure {
@@ -43,7 +47,8 @@ class InvalidReferralFailure extends Failure {
 }
 
 class CompetitionClosedFailure extends Failure {
-  const CompetitionClosedFailure([super.message = 'Questa competizione non è più attiva.']);
+  const CompetitionClosedFailure(
+      [super.message = 'Questa competizione non è più attiva.']);
 }
 
 class PaymentFailure extends Failure {
@@ -55,9 +60,11 @@ class ValidationFailure extends Failure {
 }
 
 class ServerFailure extends Failure {
-  const ServerFailure([super.message = 'Qualcosa è andato storto. Riprova più tardi.']);
+  const ServerFailure(
+      [super.message = 'Qualcosa è andato storto. Riprova più tardi.']);
 }
 
 class UnknownFailure extends Failure {
-  const UnknownFailure([super.message = 'Errore imprevisto. Riprova più tardi.']);
+  const UnknownFailure(
+      [super.message = 'Errore imprevisto. Riprova più tardi.']);
 }

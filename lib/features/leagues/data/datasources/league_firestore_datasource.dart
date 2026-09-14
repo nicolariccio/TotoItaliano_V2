@@ -13,7 +13,9 @@ class LeagueFirestoreDatasource {
       _firestore.collection(FirestorePaths.leagues);
 
   CollectionReference<Map<String, dynamic>> _members(String leagueId) =>
-      _leagues.doc(leagueId).collection(FirestorePaths.leagueMembersSubcollection);
+      _leagues
+          .doc(leagueId)
+          .collection(FirestorePaths.leagueMembersSubcollection);
 
   DocumentReference<Map<String, dynamic>> _userRef(String userId) =>
       _firestore.collection(FirestorePaths.users).doc(userId);
@@ -30,12 +32,18 @@ class LeagueFirestoreDatasource {
   }
 
   Future<bool> isInviteCodeTaken(String inviteCode) async {
-    final snapshot = await _leagues.where('inviteCode', isEqualTo: inviteCode).limit(1).get();
+    final snapshot = await _leagues
+        .where('inviteCode', isEqualTo: inviteCode)
+        .limit(1)
+        .get();
     return snapshot.docs.isNotEmpty;
   }
 
   Future<League?> findByInviteCode(String inviteCode) async {
-    final snapshot = await _leagues.where('inviteCode', isEqualTo: inviteCode).limit(1).get();
+    final snapshot = await _leagues
+        .where('inviteCode', isEqualTo: inviteCode)
+        .limit(1)
+        .get();
     if (snapshot.docs.isEmpty) return null;
     return _leagueFromDoc(snapshot.docs.first);
   }
@@ -141,7 +149,8 @@ class LeagueFirestoreDatasource {
         .where('userId', isEqualTo: userId)
         .snapshots()
         .asyncMap((snapshot) async {
-      final leagueIds = snapshot.docs.map((doc) => doc.data()['leagueId'] as String).toSet();
+      final leagueIds =
+          snapshot.docs.map((doc) => doc.data()['leagueId'] as String).toSet();
       final leagues = await Future.wait(leagueIds.map(getLeague));
       return leagues.whereType<League>().toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -174,7 +183,9 @@ class LeagueFirestoreDatasource {
       username: data['username'] as String? ?? '',
       photoUrl: data['photoUrl'] as String?,
       joinedAt: joinedAt is Timestamp ? joinedAt.toDate() : DateTime.now(),
-      role: data['role'] == 'owner' ? LeagueMemberRole.owner : LeagueMemberRole.member,
+      role: data['role'] == 'owner'
+          ? LeagueMemberRole.owner
+          : LeagueMemberRole.member,
       totalPoints: (data['totalPoints'] as num?)?.toInt() ?? 0,
     );
   }

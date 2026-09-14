@@ -7,15 +7,18 @@ import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'auth_providers.dart';
 
-final Provider<FirebaseAuthDatasource> firebaseAuthDatasourceProvider = Provider<FirebaseAuthDatasource>(
+final Provider<FirebaseAuthDatasource> firebaseAuthDatasourceProvider =
+    Provider<FirebaseAuthDatasource>(
   (ref) => FirebaseAuthDatasource(ref.watch(firebaseAuthProvider)),
 );
 
-final Provider<UserFirestoreDatasource> userFirestoreDatasourceProvider = Provider<UserFirestoreDatasource>(
+final Provider<UserFirestoreDatasource> userFirestoreDatasourceProvider =
+    Provider<UserFirestoreDatasource>(
   (ref) => UserFirestoreDatasource(FirebaseFirestore.instance),
 );
 
-final Provider<AuthRepository> authRepositoryProvider = Provider<AuthRepository>(
+final Provider<AuthRepository> authRepositoryProvider =
+    Provider<AuthRepository>(
   (ref) => AuthRepositoryImpl(
     ref.watch(firebaseAuthDatasourceProvider),
     ref.watch(userFirestoreDatasourceProvider),

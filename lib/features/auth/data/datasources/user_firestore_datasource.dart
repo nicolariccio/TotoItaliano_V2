@@ -15,7 +15,8 @@ class UserFirestoreDatasource {
       _firestore.collection(FirestorePaths.users);
 
   Future<bool> isUsernameTaken(String username) async {
-    final snapshot = await _users.where('username', isEqualTo: username).limit(1).get();
+    final snapshot =
+        await _users.where('username', isEqualTo: username).limit(1).get();
     return snapshot.docs.isNotEmpty;
   }
 

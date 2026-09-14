@@ -25,7 +25,8 @@ class PredictionsScreen extends ConsumerWidget {
           message: 'Non è stato possibile verificare le tue leghe.',
           onRetry: () => ref.invalidate(myLeaguesProvider),
         ),
-        data: (leagues) => leagues.isEmpty ? const _LeagueGate() : const _SchedinaBody(),
+        data: (leagues) =>
+            leagues.isEmpty ? const _LeagueGate() : const _SchedinaBody(),
       ),
     );
   }
@@ -39,7 +40,8 @@ class _LeagueGate extends StatelessWidget {
     return AppEmptyView(
       icon: Icons.groups_outlined,
       title: 'Serve una lega per pronosticare',
-      subtitle: 'Crea una lega privata o entra con un invite code prima di compilare la schedina.',
+      subtitle:
+          'Crea una lega privata o entra con un invite code prima di compilare la schedina.',
       action: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -70,14 +72,18 @@ class _SchedinaBody extends ConsumerWidget {
 
     ref.listen(schedinaControllerProvider, (previous, next) {
       if (next.savedSuccessfully && previous?.savedSuccessfully != true) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Schedina salvata.')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Schedina salvata.')));
       }
-      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(next.errorMessage!)));
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(next.errorMessage!)));
       }
     });
 
-    final bool isLoading = matchdayAsync.isLoading || matchesAsync.isLoading || schedina.isLoading;
+    final bool isLoading =
+        matchdayAsync.isLoading || matchesAsync.isLoading || schedina.isLoading;
     final Object? error = matchdayAsync.error ?? matchesAsync.error;
 
     if (isLoading) return const AppLoadingView();
@@ -109,7 +115,8 @@ class _SchedinaBody extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Giornata ${matchdayAsync.value?.number ?? ''}', style: Theme.of(context).textTheme.titleMedium),
+              Text('Giornata ${matchdayAsync.value?.number ?? ''}',
+                  style: Theme.of(context).textTheme.titleMedium),
               Text(
                 '${schedina.completedCount}/${matches.length} completati',
                 style: Theme.of(context).textTheme.bodySmall,
@@ -125,7 +132,8 @@ class _SchedinaBody extends ConsumerWidget {
             itemBuilder: (context, index) {
               final match = matches[index];
               final pick = schedina.picks[match.id] ?? const PickState();
-              return SchedinaRow(match: match, pick: pick, controller: controller);
+              return SchedinaRow(
+                  match: match, pick: pick, controller: controller);
             },
           ),
         ),
@@ -137,7 +145,8 @@ class _SchedinaBody extends ConsumerWidget {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
                   )
                 : const Text('SALVA SCHEDINA'),
           ),

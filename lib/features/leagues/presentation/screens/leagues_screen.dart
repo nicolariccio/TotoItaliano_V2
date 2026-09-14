@@ -53,15 +53,18 @@ class LeaguesScreen extends ConsumerWidget {
                 if (leagues.isEmpty) {
                   return const AppEmptyView(
                     title: 'Nessuna lega ancora',
-                    subtitle: 'Crea una lega privata o entra con un invite code.',
+                    subtitle:
+                        'Crea una lega privata o entra con un invite code.',
                     icon: Icons.groups_outlined,
                   );
                 }
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                   itemCount: leagues.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) => _LeagueTile(league: leagues[index]),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: (context, index) =>
+                      _LeagueTile(league: leagues[index]),
                 );
               },
             ),
@@ -91,7 +94,8 @@ class _LeagueTile extends StatelessWidget {
               CircleAvatar(
                 radius: 22,
                 backgroundColor: AppColors.azzurro.withValues(alpha: 0.16),
-                child: const Icon(Icons.shield_rounded, color: AppColors.azzurro),
+                child:
+                    const Icon(Icons.shield_rounded, color: AppColors.azzurro),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -100,11 +104,15 @@ class _LeagueTile extends StatelessWidget {
                   children: [
                     Text(league.name, style: theme.textTheme.labelLarge),
                     const SizedBox(height: 4),
-                    Text('${league.memberCount} membri', style: theme.textTheme.bodySmall),
+                    Text('${league.memberCount} membri',
+                        style: theme.textTheme.bodySmall),
                   ],
                 ),
               ),
-              PillBadge(label: league.inviteCode, color: AppColors.darkSurfaceElevated, onColor: AppColors.azzurro),
+              PillBadge(
+                  label: league.inviteCode,
+                  color: AppColors.darkSurfaceElevated,
+                  onColor: AppColors.azzurro),
               const SizedBox(width: 4),
               const Icon(Icons.chevron_right_rounded),
             ],

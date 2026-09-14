@@ -40,13 +40,16 @@ class MockFootballDataService implements FootballDataService {
   Future<List<Competition>> getCompetitions() => _respond([_competition]);
 
   @override
-  Future<List<Team>> getTeams({required String competitionId}) => _respond(_teams);
+  Future<List<Team>> getTeams({required String competitionId}) =>
+      _respond(_teams);
 
   @override
-  Future<List<Matchday>> getMatchdays({required String competitionId}) => _respond(_matchdays);
+  Future<List<Matchday>> getMatchdays({required String competitionId}) =>
+      _respond(_matchdays);
 
   @override
-  Future<List<Match>> getMatches({required String competitionId, String? matchdayId}) {
+  Future<List<Match>> getMatches(
+      {required String competitionId, String? matchdayId}) {
     final matches = matchdayId == null
         ? _matches
         : _matches.where((m) => m.matchdayId == matchdayId).toList();
@@ -60,7 +63,8 @@ class MockFootballDataService implements FootballDataService {
   }
 
   @override
-  Future<List<Match>> getResults({required String competitionId, String? matchdayId}) {
+  Future<List<Match>> getResults(
+      {required String competitionId, String? matchdayId}) {
     final results = _matches
         .where((m) => m.status == MatchStatus.finished)
         .where((m) => matchdayId == null || m.matchdayId == matchdayId)
@@ -104,11 +108,13 @@ class MockFootballDataService implements FootballDataService {
       ..sort((a, b) {
         final byPoints = b.points.compareTo(a.points);
         if (byPoints != 0) return byPoints;
-        return (b.goalsFor - b.goalsAgainst).compareTo(a.goalsFor - a.goalsAgainst);
+        return (b.goalsFor - b.goalsAgainst)
+            .compareTo(a.goalsFor - a.goalsAgainst);
       });
 
     return _respond([
-      for (var i = 0; i < standings.length; i++) standings[i].toStanding(position: i + 1),
+      for (var i = 0; i < standings.length; i++)
+        standings[i].toStanding(position: i + 1),
     ]);
   }
 
@@ -167,7 +173,8 @@ class MockFootballDataService implements FootballDataService {
 
   List<Matchday> _buildMatchdays() {
     final now = DateTime.now();
-    final matchday2FirstKickoff = _atTime(now.add(const Duration(days: 1)), 15, 0);
+    final matchday2FirstKickoff =
+        _atTime(now.add(const Duration(days: 1)), 15, 0);
 
     return [
       Matchday(
@@ -212,12 +219,21 @@ class MockFootballDataService implements FootballDataService {
 
     // Giornata 1 — conclusa, con risultati.
     const md1Scores = [
-      (2, 1), (1, 1), (3, 0), (0, 0), (2, 2),
-      (1, 0), (0, 2), (1, 3), (2, 0), (1, 1),
+      (2, 1),
+      (1, 1),
+      (3, 0),
+      (0, 0),
+      (2, 2),
+      (1, 0),
+      (0, 2),
+      (1, 3),
+      (2, 0),
+      (1, 1),
     ];
     matches.addAll(_pairTeams(
       matchdayId: 'md1',
-      kickoffs: List.generate(10, (i) => now.subtract(Duration(days: 14 - (i ~/ 4)))),
+      kickoffs:
+          List.generate(10, (i) => now.subtract(Duration(days: 14 - (i ~/ 4)))),
       scores: md1Scores,
     ));
 
@@ -234,11 +250,14 @@ class MockFootballDataService implements FootballDataService {
       _atTime(now.add(const Duration(days: 3)), 15, 0),
       _atTime(now.add(const Duration(days: 3)), 18, 0),
     ];
-    matches.addAll(_pairTeams(matchdayId: 'md2', kickoffs: md2Kickoffs, scores: null));
+    matches.addAll(
+        _pairTeams(matchdayId: 'md2', kickoffs: md2Kickoffs, scores: null));
 
     // Giornata 3 — futura, non ancora programmata nel dettaglio.
-    final md3Kickoffs = List.generate(10, (i) => _atTime(now.add(Duration(days: 8 + i ~/ 4)), 15, 0));
-    matches.addAll(_pairTeams(matchdayId: 'md3', kickoffs: md3Kickoffs, scores: null));
+    final md3Kickoffs = List.generate(
+        10, (i) => _atTime(now.add(Duration(days: 8 + i ~/ 4)), 15, 0));
+    matches.addAll(
+        _pairTeams(matchdayId: 'md3', kickoffs: md3Kickoffs, scores: null));
 
     return matches;
   }

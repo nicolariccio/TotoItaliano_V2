@@ -33,7 +33,9 @@ class _LeagueCreateScreenState extends ConsumerState<LeagueCreateScreen> {
     try {
       final leagueId = await ref.read(leagueRepositoryProvider).createLeague(
             name: _nameController.text.trim(),
-            description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+            description: _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim(),
           );
       if (!mounted) return;
       context.pushReplacement(RoutePaths.leagueDetailPath(leagueId));
@@ -64,7 +66,8 @@ class _LeagueCreateScreenState extends ConsumerState<LeagueCreateScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Descrizione (opzionale)'),
+                  decoration: const InputDecoration(
+                      labelText: 'Descrizione (opzionale)'),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 24),
@@ -74,7 +77,8 @@ class _LeagueCreateScreenState extends ConsumerState<LeagueCreateScreen> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Text('CREA LEGA'),
                 ),

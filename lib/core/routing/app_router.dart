@@ -44,9 +44,11 @@ const List<String> _publicAuthRoutes = [
 
 final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = _RouterRefreshNotifier();
-  ref.listen(authStateChangesProvider, (previous, next) => refreshNotifier.notify());
+  ref.listen(
+      authStateChangesProvider, (previous, next) => refreshNotifier.notify());
   ref.listen(currentUserProvider, (previous, next) => refreshNotifier.notify());
-  ref.listen(onboardingCompleteProvider, (previous, next) => refreshNotifier.notify());
+  ref.listen(
+      onboardingCompleteProvider, (previous, next) => refreshNotifier.notify());
   ref.onDispose(refreshNotifier.dispose);
 
   return GoRouter(
@@ -86,39 +88,59 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
       final bool onPublicAuthRoute = _publicAuthRoutes.contains(location);
 
       if (!isAuthenticated && !onPublicAuthRoute) return RoutePaths.login;
-      if (isAuthenticated && (onPublicAuthRoute || location == RoutePaths.onboarding)) {
+      if (isAuthenticated &&
+          (onPublicAuthRoute || location == RoutePaths.onboarding)) {
         return RoutePaths.home;
       }
       return null;
     },
     routes: [
-      GoRoute(path: RoutePaths.splash, builder: (context, state) => const SplashScreen()),
-      GoRoute(path: RoutePaths.onboarding, builder: (context, state) => const OnboardingScreen()),
-      GoRoute(path: RoutePaths.login, builder: (context, state) => const LoginScreen()),
-      GoRoute(path: RoutePaths.register, builder: (context, state) => const RegisterScreen()),
+      GoRoute(
+          path: RoutePaths.splash,
+          builder: (context, state) => const SplashScreen()),
+      GoRoute(
+          path: RoutePaths.onboarding,
+          builder: (context, state) => const OnboardingScreen()),
+      GoRoute(
+          path: RoutePaths.login,
+          builder: (context, state) => const LoginScreen()),
+      GoRoute(
+          path: RoutePaths.register,
+          builder: (context, state) => const RegisterScreen()),
       GoRoute(
         path: RoutePaths.forgotPassword,
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => HomeShell(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) =>
+            HomeShell(navigationShell: navigationShell),
         branches: [
           StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.home, builder: (context, state) => const HomeScreen()),
+            GoRoute(
+                path: RoutePaths.home,
+                builder: (context, state) => const HomeScreen()),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.predictions, builder: (context, state) => const PredictionsScreen()),
+            GoRoute(
+                path: RoutePaths.predictions,
+                builder: (context, state) => const PredictionsScreen()),
           ]),
           StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.leaderboard, builder: (context, state) => const LeaderboardScreen()),
+            GoRoute(
+                path: RoutePaths.leaderboard,
+                builder: (context, state) => const LeaderboardScreen()),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
               path: RoutePaths.leagues,
               builder: (context, state) => const LeaguesScreen(),
               routes: [
-                GoRoute(path: 'create', builder: (context, state) => const LeagueCreateScreen()),
-                GoRoute(path: 'join', builder: (context, state) => const LeagueJoinScreen()),
+                GoRoute(
+                    path: 'create',
+                    builder: (context, state) => const LeagueCreateScreen()),
+                GoRoute(
+                    path: 'join',
+                    builder: (context, state) => const LeagueJoinScreen()),
                 GoRoute(
                   path: RoutePaths.leagueDetail,
                   builder: (context, state) => LeagueDetailScreen(
@@ -133,8 +155,13 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
               path: RoutePaths.profile,
               builder: (context, state) => const ProfileScreen(),
               routes: [
-                GoRoute(path: 'settings', builder: (context, state) => const SettingsScreen()),
-                GoRoute(path: 'history', builder: (context, state) => const PredictionHistoryScreen()),
+                GoRoute(
+                    path: 'settings',
+                    builder: (context, state) => const SettingsScreen()),
+                GoRoute(
+                    path: 'history',
+                    builder: (context, state) =>
+                        const PredictionHistoryScreen()),
               ],
             ),
           ]),

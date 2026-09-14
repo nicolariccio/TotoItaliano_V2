@@ -44,7 +44,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
           username: _usernameController.text.trim(),
-          referralCode: _referralController.text.trim().isEmpty ? null : _referralController.text.trim(),
+          referralCode: _referralController.text.trim().isEmpty
+              ? null
+              : _referralController.text.trim(),
         );
   }
 
@@ -81,7 +83,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       child: TextFormField(
                         controller: _lastNameController,
                         decoration: const InputDecoration(labelText: 'Cognome'),
-                        validator: (v) => Validators.required(v, field: 'Cognome'),
+                        validator: (v) =>
+                            Validators.required(v, field: 'Cognome'),
                       ),
                     ),
                   ],
@@ -107,8 +110,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   decoration: InputDecoration(
                     labelText: 'Password',
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(_obscurePassword
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   validator: Validators.password,
@@ -120,16 +126,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   decoration: InputDecoration(
                     labelText: 'Conferma password',
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureConfirm ? Icons.visibility_off_rounded : Icons.visibility_rounded),
-                      onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                      icon: Icon(_obscureConfirm
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
                   ),
-                  validator: (v) => Validators.confirmPassword(v, _passwordController.text),
+                  validator: (v) =>
+                      Validators.confirmPassword(v, _passwordController.text),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _referralController,
-                  decoration: const InputDecoration(labelText: 'Codice referral (opzionale)'),
+                  decoration: const InputDecoration(
+                      labelText: 'Codice referral (opzionale)'),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -138,7 +149,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Text('REGISTRATI'),
                 ),

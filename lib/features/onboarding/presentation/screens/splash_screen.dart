@@ -16,7 +16,8 @@ class SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.sports_soccer_rounded, color: AppColors.azzurro, size: 56),
+            Icon(Icons.sports_soccer_rounded,
+                color: AppColors.azzurro, size: 56),
             SizedBox(height: 16),
             Text(
               AppConstants.appName,

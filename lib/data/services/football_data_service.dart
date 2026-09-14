@@ -16,11 +16,13 @@ abstract class FootballDataService {
 
   Future<List<Matchday>> getMatchdays({required String competitionId});
 
-  Future<List<Match>> getMatches({required String competitionId, String? matchdayId});
+  Future<List<Match>> getMatches(
+      {required String competitionId, String? matchdayId});
 
   Future<Match?> getMatch(String matchId);
 
   Future<List<TeamStanding>> getStandings({required String competitionId});
 
-  Future<List<Match>> getResults({required String competitionId, String? matchdayId});
+  Future<List<Match>> getResults(
+      {required String competitionId, String? matchdayId});
 }

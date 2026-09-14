@@ -9,7 +9,8 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -25,7 +26,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(forgotPasswordControllerProvider.notifier).submit(_emailController.text.trim());
+    await ref
+        .read(forgotPasswordControllerProvider.notifier)
+        .submit(_emailController.text.trim());
     if (!mounted) return;
     if (!ref.read(forgotPasswordControllerProvider).hasError) {
       setState(() => _sent = true);
@@ -50,7 +53,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ? Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.mark_email_read_rounded, size: 48, color: Colors.green),
+                    const Icon(Icons.mark_email_read_rounded,
+                        size: 48, color: Colors.green),
                     const SizedBox(height: 16),
                     Text(
                       'Ti abbiamo inviato un\'email con le istruzioni per reimpostare la password.',
@@ -82,7 +86,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
                               )
                             : const Text('INVIA'),
                       ),

@@ -16,15 +16,18 @@ import '../services/football_data_service.dart';
 /// scritta, dati sincronizzati da una Cloud Function in functions/) è
 /// pronta a sostituire questa riga con un'architettura equivalente lato
 /// Firebase invece che Cloudflare.
-final Provider<FootballDataService> footballDataServiceProvider = Provider<FootballDataService>(
+final Provider<FootballDataService> footballDataServiceProvider =
+    Provider<FootballDataService>(
   (ref) => ApiFootballDataService(),
 );
 
-final FutureProvider<List<Competition>> competitionsProvider = FutureProvider<List<Competition>>(
+final FutureProvider<List<Competition>> competitionsProvider =
+    FutureProvider<List<Competition>>(
   (ref) => ref.watch(footballDataServiceProvider).getCompetitions(),
 );
 
-final FutureProvider<Competition> activeCompetitionProvider = FutureProvider<Competition>((ref) async {
+final FutureProvider<Competition> activeCompetitionProvider =
+    FutureProvider<Competition>((ref) async {
   final competitions = await ref.watch(competitionsProvider.future);
   return competitions.firstWhere(
     (c) => c.status == CompetitionStatus.active,
@@ -32,12 +35,16 @@ final FutureProvider<Competition> activeCompetitionProvider = FutureProvider<Com
   );
 });
 
-final FutureProvider<List<Matchday>> matchdaysProvider = FutureProvider<List<Matchday>>((ref) async {
+final FutureProvider<List<Matchday>> matchdaysProvider =
+    FutureProvider<List<Matchday>>((ref) async {
   final competition = await ref.watch(activeCompetitionProvider.future);
-  return ref.watch(footballDataServiceProvider).getMatchdays(competitionId: competition.id);
+  return ref
+      .watch(footballDataServiceProvider)
+      .getMatchdays(competitionId: competition.id);
 });
 
-final FutureProvider<Matchday> currentMatchdayProvider = FutureProvider<Matchday>((ref) async {
+final FutureProvider<Matchday> currentMatchdayProvider =
+    FutureProvider<Matchday>((ref) async {
   final matchdays = await ref.watch(matchdaysProvider.future);
   return matchdays.firstWhere(
     (m) => m.status == MatchdayStatus.active,
@@ -45,7 +52,8 @@ final FutureProvider<Matchday> currentMatchdayProvider = FutureProvider<Matchday
   );
 });
 
-final FutureProvider<List<Match>> currentMatchdayMatchesProvider = FutureProvider<List<Match>>((ref) async {
+final FutureProvider<List<Match>> currentMatchdayMatchesProvider =
+    FutureProvider<List<Match>>((ref) async {
   final competition = await ref.watch(activeCompetitionProvider.future);
   final matchday = await ref.watch(currentMatchdayProvider.future);
   final matches = await ref
@@ -54,6 +62,7 @@ final FutureProvider<List<Match>> currentMatchdayMatchesProvider = FutureProvide
   return matches..sort((a, b) => a.kickoff.compareTo(b.kickoff));
 });
 
-final FutureProviderFamily<Match?, String> matchByIdProvider = FutureProvider.family<Match?, String>(
+final FutureProviderFamily<Match?, String> matchByIdProvider =
+    FutureProvider.family<Match?, String>(
   (ref, matchId) => ref.watch(footballDataServiceProvider).getMatch(matchId),
 );

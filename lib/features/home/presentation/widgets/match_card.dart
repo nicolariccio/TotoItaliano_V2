@@ -29,7 +29,10 @@ class MatchCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: _TeamLabel(name: match.homeTeam.name, code: match.homeTeam.shortName)),
+                  Expanded(
+                      child: _TeamLabel(
+                          name: match.homeTeam.name,
+                          code: match.homeTeam.shortName)),
                   Text('vs', style: theme.textTheme.bodySmall),
                   Expanded(
                     child: _TeamLabel(
@@ -44,9 +47,11 @@ class MatchCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(DateFormatter.matchKickoff(match.kickoff), style: theme.textTheme.bodySmall),
+                  Text(DateFormatter.matchKickoff(match.kickoff),
+                      style: theme.textTheme.bodySmall),
                   isOpen
-                      ? const PillBadge(label: 'APERTO', color: AppColors.success)
+                      ? const PillBadge(
+                          label: 'APERTO', color: AppColors.success)
                       : const PillBadge(
                           label: 'LOCKED',
                           color: AppColors.darkBorder,
@@ -80,7 +85,8 @@ class MatchCard extends StatelessWidget {
 }
 
 class _TeamLabel extends StatelessWidget {
-  const _TeamLabel({required this.name, required this.code, this.alignEnd = false});
+  const _TeamLabel(
+      {required this.name, required this.code, this.alignEnd = false});
 
   final String name;
   final String code;
@@ -108,7 +114,9 @@ class _TeamLabel extends StatelessWidget {
     );
 
     return Row(
-      children: alignEnd ? [label, const SizedBox(width: 8), badge] : [badge, const SizedBox(width: 8), label],
+      children: alignEnd
+          ? [label, const SizedBox(width: 8), badge]
+          : [badge, const SizedBox(width: 8), label],
     );
   }
 }

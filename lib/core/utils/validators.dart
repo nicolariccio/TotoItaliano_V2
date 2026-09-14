@@ -31,7 +31,8 @@ class Validators {
   static String? password(String? value) {
     if (value == null || value.isEmpty) return 'Password obbligatoria.';
     if (value.length < 8) return 'Almeno 8 caratteri.';
-    if (!RegExp(r'[A-Z]').hasMatch(value)) return 'Almeno una lettera maiuscola.';
+    if (!RegExp(r'[A-Z]').hasMatch(value))
+      return 'Almeno una lettera maiuscola.';
     if (!RegExp(r'[0-9]').hasMatch(value)) return 'Almeno un numero.';
     return null;
   }

@@ -45,20 +45,23 @@ class PredictionFirestoreDatasource {
     final batch = _firestore.batch();
     for (final pick in picks) {
       final docRef = _predictions.doc(_docId(userId, pick.matchId));
-      batch.set(docRef, {
-        'userId': userId,
-        'matchId': pick.matchId,
-        'competitionId': pick.competitionId,
-        'matchdayId': pick.matchdayId,
-        'market': pick.market.name,
-        'result1x2Value': pick.result1x2Value,
-        'goalNoGoalValue': pick.goalNoGoalValue,
-        'overUnder25Value': pick.overUnder25Value,
-        'exactHomeScore': pick.exactHomeScore,
-        'exactAwayScore': pick.exactAwayScore,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      batch.set(
+          docRef,
+          {
+            'userId': userId,
+            'matchId': pick.matchId,
+            'competitionId': pick.competitionId,
+            'matchdayId': pick.matchdayId,
+            'market': pick.market.name,
+            'result1x2Value': pick.result1x2Value,
+            'goalNoGoalValue': pick.goalNoGoalValue,
+            'overUnder25Value': pick.overUnder25Value,
+            'exactHomeScore': pick.exactHomeScore,
+            'exactAwayScore': pick.exactAwayScore,
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true));
     }
     await batch.commit();
   }
@@ -78,7 +81,8 @@ class PredictionFirestoreDatasource {
         );
   }
 
-  Stream<List<Prediction>> watchForUserAndMatchday(String userId, String matchdayId) {
+  Stream<List<Prediction>> watchForUserAndMatchday(
+      String userId, String matchdayId) {
     return _predictions
         .where('userId', isEqualTo: userId)
         .where('matchdayId', isEqualTo: matchdayId)

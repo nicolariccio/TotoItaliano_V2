@@ -19,7 +19,8 @@ class FirebaseAuthDatasource {
   User? get currentUser => _auth.currentUser;
 
   Future<UserCredential> registerWithEmail(String email, String password) {
-    return _auth.createUserWithEmailAndPassword(email: email, password: password);
+    return _auth.createUserWithEmailAndPassword(
+        email: email, password: password);
   }
 
   Future<UserCredential> signInWithEmail(String email, String password) {
@@ -29,7 +30,8 @@ class FirebaseAuthDatasource {
   Future<UserCredential> signInWithGoogle() async {
     final GoogleSignInAccount? account = await _googleSignInInstance.signIn();
     if (account == null) {
-      throw FirebaseAuthException(code: 'sign-in-canceled', message: 'Accesso Google annullato.');
+      throw FirebaseAuthException(
+          code: 'sign-in-canceled', message: 'Accesso Google annullato.');
     }
     final GoogleSignInAuthentication googleAuth = await account.authentication;
     final credential = GoogleAuthProvider.credential(
@@ -44,7 +46,8 @@ class FirebaseAuthDatasource {
   }
 
   Future<void> signOut() async {
-    await Future.wait([_auth.signOut(), if (_googleSignIn != null) _googleSignIn!.signOut()]);
+    await Future.wait(
+        [_auth.signOut(), if (_googleSignIn != null) _googleSignIn!.signOut()]);
   }
 
   Future<void> deleteCurrentUser() async {

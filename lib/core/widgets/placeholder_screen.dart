@@ -11,7 +11,8 @@ class PlaceholderScreen extends StatelessWidget {
     super.key,
     required this.title,
     this.icon = Icons.construction_rounded,
-    this.subtitle = 'Questa sezione sarà disponibile in una prossima fase di sviluppo.',
+    this.subtitle =
+        'Questa sezione sarà disponibile in una prossima fase di sviluppo.',
   });
 
   final String title;
@@ -31,9 +32,13 @@ class PlaceholderScreen extends StatelessWidget {
             children: [
               Icon(icon, size: 48, color: AppColors.azzurro),
               const SizedBox(height: 16),
-              Text(title, style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
+              Text(title,
+                  style: theme.textTheme.headlineMedium,
+                  textAlign: TextAlign.center),
               const SizedBox(height: 8),
-              Text(subtitle, style: theme.textTheme.bodyMedium, textAlign: TextAlign.center),
+              Text(subtitle,
+                  style: theme.textTheme.bodyMedium,
+                  textAlign: TextAlign.center),
             ],
           ),
         ),

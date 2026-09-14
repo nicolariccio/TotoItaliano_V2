@@ -7,7 +7,8 @@ import 'auth_repository_provider.dart';
 /// Profilo Firestore dell'utente autenticato, reattivo sia ai cambi di
 /// stato auth (login/logout) sia agli aggiornamenti del documento
 /// `users/{uid}` (es. punteggio aggiornato da una Cloud Function).
-final StreamProvider<AppUser?> currentUserProvider = StreamProvider<AppUser?>((ref) {
+final StreamProvider<AppUser?> currentUserProvider =
+    StreamProvider<AppUser?>((ref) {
   final firebaseUser = ref.watch(authStateChangesProvider).valueOrNull;
   if (firebaseUser == null) return Stream.value(null);
 

@@ -29,7 +29,9 @@ class _LeagueJoinScreenState extends ConsumerState<LeagueJoinScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isJoining = true);
     try {
-      final league = await ref.read(leagueRepositoryProvider).joinLeagueByInviteCode(_codeController.text.trim());
+      final league = await ref
+          .read(leagueRepositoryProvider)
+          .joinLeagueByInviteCode(_codeController.text.trim());
       if (!mounted) return;
       context.pushReplacement(RoutePaths.leagueDetailPath(league.id));
     } catch (error) {
@@ -59,7 +61,8 @@ class _LeagueJoinScreenState extends ConsumerState<LeagueJoinScreen> {
                 TextFormField(
                   controller: _codeController,
                   textCapitalization: TextCapitalization.characters,
-                  decoration: const InputDecoration(labelText: 'Codice invito', hintText: 'TOTO-8K4P2'),
+                  decoration: const InputDecoration(
+                      labelText: 'Codice invito', hintText: 'TOTO-8K4P2'),
                   validator: Validators.inviteCode,
                 ),
                 const SizedBox(height: 24),
@@ -69,7 +72,8 @@ class _LeagueJoinScreenState extends ConsumerState<LeagueJoinScreen> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Text('ENTRA'),
                 ),

@@ -33,5 +33,7 @@ class RegisterController extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final StateNotifierProvider<RegisterController, AsyncValue<void>> registerControllerProvider =
-    StateNotifierProvider<RegisterController, AsyncValue<void>>((ref) => RegisterController(ref));
+final StateNotifierProvider<RegisterController, AsyncValue<void>>
+    registerControllerProvider =
+    StateNotifierProvider<RegisterController, AsyncValue<void>>(
+        (ref) => RegisterController(ref));

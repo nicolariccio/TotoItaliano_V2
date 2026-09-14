@@ -30,7 +30,8 @@ class AuthRepositoryImpl implements AuthRepository {
       // disponibilità dell'username, non dopo. Se l'username risulta già
       // in uso o la scrittura del profilo fallisce, l'account Auth appena
       // creato viene eliminato per non lasciare un account "orfano".
-      final UserCredential credential = await _authDatasource.registerWithEmail(email, password);
+      final UserCredential credential =
+          await _authDatasource.registerWithEmail(email, password);
       final User firebaseUser = credential.user!;
 
       try {
@@ -45,7 +46,9 @@ class AuthRepositoryImpl implements AuthRepository {
           firstName: firstName,
           lastName: lastName,
           referralCode: CodeGenerator.referralCode(seed: username),
-          referredBy: (referralCode == null || referralCode.trim().isEmpty) ? null : referralCode.trim(),
+          referredBy: (referralCode == null || referralCode.trim().isEmpty)
+              ? null
+              : referralCode.trim(),
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -68,7 +71,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> loginWithEmail({required String email, required String password}) async {
+  Future<void> loginWithEmail(
+      {required String email, required String password}) async {
     try {
       await _authDatasource.signInWithEmail(email, password);
     } catch (error) {
@@ -79,14 +83,17 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<bool> signInWithGoogle() async {
     try {
-      final UserCredential credential = await _authDatasource.signInWithGoogle();
+      final UserCredential credential =
+          await _authDatasource.signInWithGoogle();
       final User firebaseUser = credential.user!;
       final bool isNewUser = credential.additionalUserInfo?.isNewUser ?? false;
 
       if (isNewUser) {
-        final String baseUsername = _usernameFromEmail(firebaseUser.email ?? firebaseUser.uid);
+        final String baseUsername =
+            _usernameFromEmail(firebaseUser.email ?? firebaseUser.uid);
         final String username = await _uniqueUsername(baseUsername);
-        final List<String> nameParts = (firebaseUser.displayName ?? '').trim().split(' ');
+        final List<String> nameParts =
+            (firebaseUser.displayName ?? '').trim().split(' ');
 
         final user = AppUser(
           id: firebaseUser.uid,
@@ -121,7 +128,9 @@ class AuthRepositoryImpl implements AuthRepository {
   String _usernameFromEmail(String email) {
     final String local = email.split('@').first;
     final String cleaned = local.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
-    return cleaned.isEmpty ? 'utente${DateTime.now().millisecondsSinceEpoch}' : cleaned;
+    return cleaned.isEmpty
+        ? 'utente${DateTime.now().millisecondsSinceEpoch}'
+        : cleaned;
   }
 
   @override

@@ -10,7 +10,8 @@ import '../../domain/repositories/league_repository.dart';
 import '../datasources/league_firestore_datasource.dart';
 
 class LeagueRepositoryImpl implements LeagueRepository {
-  LeagueRepositoryImpl(this._auth, this._leagueDatasource, this._userDatasource);
+  LeagueRepositoryImpl(
+      this._auth, this._leagueDatasource, this._userDatasource);
 
   final FirebaseAuth _auth;
   final LeagueFirestoreDatasource _leagueDatasource;
@@ -29,11 +30,13 @@ class LeagueRepositoryImpl implements LeagueRepository {
       final code = CodeGenerator.leagueInviteCode();
       if (!await _leagueDatasource.isInviteCodeTaken(code)) return code;
     }
-    throw const ServerFailure('Non è stato possibile generare un codice lega univoco. Riprova.');
+    throw const ServerFailure(
+        'Non è stato possibile generare un codice lega univoco. Riprova.');
   }
 
   @override
-  Future<String> createLeague({required String name, String? description}) async {
+  Future<String> createLeague(
+      {required String name, String? description}) async {
     try {
       final userId = _requireUserId();
       final owner = await _userDatasource.getUser(userId);

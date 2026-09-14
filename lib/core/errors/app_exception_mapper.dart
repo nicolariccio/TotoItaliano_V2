@@ -34,11 +34,13 @@ class AppExceptionMapper {
       case 'invalid-email':
         return const AuthFailure('Indirizzo email non valido.');
       case 'too-many-requests':
-        return const AuthFailure('Troppi tentativi. Riprova tra qualche minuto.');
+        return const AuthFailure(
+            'Troppi tentativi. Riprova tra qualche minuto.');
       case 'network-request-failed':
         return const NetworkFailure();
       default:
-        return const AuthFailure('Non è stato possibile completare l\'operazione.');
+        return const AuthFailure(
+            'Non è stato possibile completare l\'operazione.');
     }
   }
 
