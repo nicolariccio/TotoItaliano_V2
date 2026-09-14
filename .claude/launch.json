@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "totoitaliano-web",
-      "runtimeExecutable": "C:\\Users\\nriccio\\flutter\\bin\\flutter.bat",
-      "runtimeArgs": ["run", "-d", "chrome", "--web-port", "5050"],
+      "runtimeExecutable": "C:\\Users\\nriccio\\TotoItaliano_V2\\run_web_v2.cmd",
+      "runtimeArgs": [],
       "port": 5050
     }
   ]
