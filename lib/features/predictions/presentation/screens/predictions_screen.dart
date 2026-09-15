@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/route_paths.dart';
+import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../../data/providers/football_data_providers.dart';
 import '../../../leagues/presentation/providers/league_providers.dart';
@@ -45,11 +46,11 @@ class _LeagueGate extends StatelessWidget {
       action: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ElevatedButton(
+          FilledButton(
             onPressed: () => context.push(RoutePaths.leagueCreate),
             child: const Text('Crea lega'),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: TotoSpace.md),
           OutlinedButton(
             onPressed: () => context.push(RoutePaths.leagueJoin),
             child: const Text('Entra in lega'),
@@ -69,6 +70,7 @@ class _SchedinaBody extends ConsumerWidget {
     final matchesAsync = ref.watch(currentMatchdayMatchesProvider);
     final schedina = ref.watch(schedinaControllerProvider);
     final controller = ref.read(schedinaControllerProvider.notifier);
+    final c = context.c;
 
     ref.listen(schedinaControllerProvider, (previous, next) {
       if (next.savedSuccessfully && previous?.savedSuccessfully != true) {
@@ -107,11 +109,14 @@ class _SchedinaBody extends ConsumerWidget {
 
     final openMatchesCount = matches.where((m) => m.isPredictionOpen).length;
     final bool canSave = openMatchesCount > 0 && !schedina.isSaving;
+    final double progress =
+        matches.isEmpty ? 0 : schedina.completedCount / matches.length;
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+          padding: const EdgeInsets.fromLTRB(
+              TotoSpace.lg, TotoSpace.md, TotoSpace.lg, TotoSpace.xs),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -126,9 +131,11 @@ class _SchedinaBody extends ConsumerWidget {
         ),
         Expanded(
           child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+            padding: const EdgeInsets.fromLTRB(
+                TotoSpace.lg, TotoSpace.sm, TotoSpace.lg, TotoSpace.sm),
             itemCount: matches.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 10),
+            separatorBuilder: (context, index) =>
+                const SizedBox(height: TotoSpace.sm),
             itemBuilder: (context, index) {
               final match = matches[index];
               final pick = schedina.picks[match.id] ?? const PickState();
@@ -138,17 +145,33 @@ class _SchedinaBody extends ConsumerWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-          child: ElevatedButton(
-            onPressed: canSave ? () => controller.save(matches) : null,
-            child: schedina.isSaving
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
-                  )
-                : const Text('SALVA SCHEDINA'),
+          padding: const EdgeInsets.fromLTRB(
+              TotoSpace.lg, TotoSpace.xs, TotoSpace.lg, TotoSpace.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(TotoRadius.full),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: c.neutralContainer,
+                  color: c.brand,
+                ),
+              ),
+              const SizedBox(height: TotoSpace.md),
+              FilledButton(
+                onPressed: canSave ? () => controller.save(matches) : null,
+                child: schedina.isSaving
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: c.textOnPrimary),
+                      )
+                    : const Text('Salva schedina'),
+              ),
+            ],
           ),
         ),
       ],

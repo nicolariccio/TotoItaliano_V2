@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/toto_theme.dart';
 
 /// Schermata segnaposto, usata SOLO per le route non ancora implementate
 /// nella fase corrente di sviluppo (vedi roadmap a fasi). Non è mai lo
@@ -30,7 +30,7 @@ class PlaceholderScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 48, color: AppColors.azzurro),
+              Icon(icon, size: 48, color: context.c.brand),
               const SizedBox(height: 16),
               Text(title,
                   style: theme.textTheme.headlineMedium,

@@ -143,7 +143,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       labelText: 'Codice referral (opzionale)'),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
+                FilledButton(
                   onPressed: isLoading ? null : _submit,
                   child: isLoading
                       ? const SizedBox(
@@ -152,7 +152,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('REGISTRATI'),
+                      : const Text('Registrati'),
                 ),
                 const SizedBox(height: 12),
               ],

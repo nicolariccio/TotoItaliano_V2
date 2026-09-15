@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/widgets/podium_leaderboard.dart';
 import '../../../../core/widgets/ranked_entry.dart';
 import '../../../../core/widgets/state_views.dart';
@@ -32,6 +31,7 @@ class LeagueDetailScreen extends ConsumerWidget {
           }
 
           final membersAsync = ref.watch(leagueMembersProvider(leagueId));
+          final c = context.c;
 
           return Column(
             children: [
@@ -48,11 +48,11 @@ class LeagueDetailScreen extends ConsumerWidget {
                     ],
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                          horizontal: TotoSpace.lg, vertical: TotoSpace.md),
                       decoration: BoxDecoration(
-                        color: AppColors.darkSurfaceElevated,
-                        borderRadius: AppRadii.mdRadius,
-                        border: Border.all(color: AppColors.darkBorder),
+                        color: c.surface2,
+                        borderRadius: BorderRadius.circular(TotoRadius.md),
+                        border: Border.all(color: c.borderSubtle),
                       ),
                       child: Row(
                         children: [
@@ -65,12 +65,8 @@ class LeagueDetailScreen extends ConsumerWidget {
                                         Theme.of(context).textTheme.bodySmall),
                                 Text(
                                   league.inviteCode,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                          color: AppColors.azzurro,
-                                          letterSpacing: 1),
+                                  style: TotoType.number(20,
+                                      display: false, color: c.brand),
                                 ),
                               ],
                             ),

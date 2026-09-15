@@ -71,7 +71,7 @@ class _LeagueCreateScreenState extends ConsumerState<LeagueCreateScreen> {
                   maxLines: 3,
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
+                FilledButton(
                   onPressed: _isSaving ? null : _submit,
                   child: _isSaving
                       ? const SizedBox(
@@ -80,7 +80,7 @@ class _LeagueCreateScreenState extends ConsumerState<LeagueCreateScreen> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('CREA LEGA'),
+                      : const Text('Crea lega'),
                 ),
               ],
             ),

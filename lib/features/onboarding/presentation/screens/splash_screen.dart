@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/toto_theme.dart';
 
 /// Splash mostrata durante l'avvio, mentre `AppRouter` valuta lo stato di
 /// autenticazione e di onboarding per decidere la prima route reale.
@@ -10,22 +10,18 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: AppColors.darkBackground,
+    const c = TotoColors.dark;
+    return Scaffold(
+      backgroundColor: c.canvas,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.sports_soccer_rounded,
-                color: AppColors.azzurro, size: 56),
-            SizedBox(height: 16),
+            Icon(Icons.sports_soccer_rounded, color: c.brand, size: 56),
+            const SizedBox(height: TotoSpace.md),
             Text(
               AppConstants.appName,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(context).textTheme.headlineLarge,
             ),
           ],
         ),

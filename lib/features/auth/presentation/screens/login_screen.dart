@@ -95,7 +95,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                ElevatedButton(
+                FilledButton(
                   onPressed: isLoading ? null : _submit,
                   child: isLoading
                       ? const SizedBox(
@@ -104,7 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('ACCEDI'),
+                      : const Text('Accedi'),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(

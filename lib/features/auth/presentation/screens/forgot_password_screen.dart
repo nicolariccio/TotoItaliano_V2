@@ -80,7 +80,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         validator: Validators.email,
                       ),
                       const SizedBox(height: 24),
-                      ElevatedButton(
+                      FilledButton(
                         onPressed: isLoading ? null : _submit,
                         child: isLoading
                             ? const SizedBox(
@@ -89,7 +89,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2, color: Colors.white),
                               )
-                            : const Text('INVIA'),
+                            : const Text('Invia'),
                       ),
                     ],
                   ),

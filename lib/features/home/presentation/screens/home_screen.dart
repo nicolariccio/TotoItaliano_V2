@@ -4,11 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routing/route_paths.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/countdown_timer.dart';
+import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/widgets/fade_slide_in.dart';
-import '../../../../core/widgets/gradient_card.dart';
 import '../../../../core/widgets/state_views.dart';
+import '../../../../core/widgets/toto_widgets.dart';
 import '../../../../data/models/match.dart';
 import '../../../../data/providers/football_data_providers.dart';
 import '../../../auth/presentation/providers/current_user_provider.dart';
@@ -80,19 +79,24 @@ class _HomeContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final c = context.c;
     final userAsync = ref.watch(currentUserProvider);
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(
+        TotoSpace.lg,
+        TotoSpace.lg,
+        TotoSpace.lg,
+        TotoSpace.navClearance,
+      ),
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                const Icon(Icons.sports_soccer_rounded,
-                    color: AppColors.azzurro, size: 28),
-                const SizedBox(width: 8),
+                Icon(Icons.sports_soccer_rounded, color: c.brand, size: 26),
+                const SizedBox(width: TotoSpace.sm),
                 Text(AppConstants.appName, style: theme.textTheme.titleLarge),
               ],
             ),
@@ -103,17 +107,17 @@ class _HomeContent extends ConsumerWidget {
                   tooltip: 'Notifiche',
                   onPressed: () {},
                 ),
-                GestureDetector(
+                PressScale(
                   onTap: () => context.go(RoutePaths.profile),
                   child: CircleAvatar(
                     radius: 16,
-                    backgroundColor: AppColors.azzurro,
+                    backgroundColor: c.brandFill,
                     child: Text(
                       userAsync.value?.username.isNotEmpty == true
                           ? userAsync.value!.username[0].toUpperCase()
                           : '?',
                       style: theme.textTheme.labelSmall
-                          ?.copyWith(color: Colors.white),
+                          ?.copyWith(color: c.textOnPrimary),
                     ),
                   ),
                 ),
@@ -121,42 +125,39 @@ class _HomeContent extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: TotoSpace.xl),
         FadeSlideIn(
-          child: GradientCard(
+          child: TotoCard(
+            level: TotoCardLevel.elevated,
+            radius: TotoRadius.xl,
+            padding: const EdgeInsets.all(TotoSpace.xxl),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   competitionLabel.toUpperCase(),
-                  style: theme.textTheme.labelLarge
-                      ?.copyWith(color: Colors.white70),
+                  style: theme.textTheme.labelSmall
+                      ?.copyWith(color: c.textSecondary),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: TotoSpace.xs),
                 Text(
-                  'GIORNATA $matchdayNumber',
-                  style: theme.textTheme.displayMedium
-                      ?.copyWith(color: Colors.white),
+                  'Giornata $matchdayNumber',
+                  style: theme.textTheme.displaySmall,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: TotoSpace.lg),
                 Text(
                   'Chiusura pronostici tra',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: Colors.white70),
+                  style: theme.textTheme.bodySmall,
                 ),
-                CountdownTimer(
-                  target: predictionDeadline,
-                  style: theme.textTheme.headlineMedium
-                      ?.copyWith(color: Colors.white),
-                  expiredLabel: 'Pronostici chiusi',
-                ),
+                const SizedBox(height: TotoSpace.xxs),
+                TotoCountdown(deadline: predictionDeadline),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        Text('PROSSIME PARTITE', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 12),
+        const SizedBox(height: TotoSpace.x3l),
+        Text('PROSSIME PARTITE', style: theme.textTheme.labelSmall),
+        const SizedBox(height: TotoSpace.md),
         if (matches.isEmpty)
           const AppEmptyView(
             title: 'Nessuna partita in programma',
@@ -164,7 +165,7 @@ class _HomeContent extends ConsumerWidget {
           )
         else
           ...matches.asMap().entries.map((entry) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: TotoSpace.md),
                 child: FadeSlideIn(
                   delay: Duration(milliseconds: 60 * entry.key.clamp(0, 8)),
                   child: MatchCard(match: entry.value),

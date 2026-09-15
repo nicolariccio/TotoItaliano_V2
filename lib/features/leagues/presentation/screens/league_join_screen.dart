@@ -66,7 +66,7 @@ class _LeagueJoinScreenState extends ConsumerState<LeagueJoinScreen> {
                   validator: Validators.inviteCode,
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
+                FilledButton(
                   onPressed: _isJoining ? null : _submit,
                   child: _isJoining
                       ? const SizedBox(
@@ -75,7 +75,7 @@ class _LeagueJoinScreenState extends ConsumerState<LeagueJoinScreen> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('ENTRA'),
+                      : const Text('Entra'),
                 ),
               ],
             ),

@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/route_paths.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
-import '../../../../core/widgets/pill_badge.dart';
+import '../../../../core/widgets/toto_widgets.dart';
 import '../../../../data/models/match.dart';
 
 class MatchCard extends StatelessWidget {
@@ -18,67 +17,57 @@ class MatchCard extends StatelessWidget {
     final theme = Theme.of(context);
     final bool isOpen = match.isPredictionOpen;
 
-    return Card(
-      child: InkWell(
-        borderRadius: AppRadii.lgRadius,
-        onTap: () => context.go(RoutePaths.predictions),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return TotoCard(
+      onTap: () => context.go(RoutePaths.predictions),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                      child: _TeamLabel(
-                          name: match.homeTeam.name,
-                          code: match.homeTeam.shortName)),
-                  Text('vs', style: theme.textTheme.bodySmall),
-                  Expanded(
-                    child: _TeamLabel(
-                      name: match.awayTeam.name,
-                      code: match.awayTeam.shortName,
-                      alignEnd: true,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(DateFormatter.matchKickoff(match.kickoff),
-                      style: theme.textTheme.bodySmall),
-                  isOpen
-                      ? const PillBadge(
-                          label: 'APERTO', color: AppColors.success)
-                      : const PillBadge(
-                          label: 'LOCKED',
-                          color: AppColors.darkBorder,
-                          icon: Icons.lock_outline_rounded,
-                        ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: isOpen
-                    ? ElevatedButton(
-                        onPressed: () => context.go(RoutePaths.predictions),
-                        child: const Text('PRONOSTICA'),
-                      )
-                    : OutlinedButton(
-                        onPressed: null,
-                        child: Text(
-                          match.status == MatchStatus.finished
-                              ? '${match.homeScore} - ${match.awayScore}'
-                              : 'PRONOSTICI CHIUSI',
-                        ),
-                      ),
+              Expanded(
+                  child: _TeamLabel(
+                      name: match.homeTeam.name,
+                      code: match.homeTeam.shortName)),
+              Text('vs', style: theme.textTheme.bodySmall),
+              Expanded(
+                child: _TeamLabel(
+                  name: match.awayTeam.name,
+                  code: match.awayTeam.shortName,
+                  alignEnd: true,
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: TotoSpace.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(DateFormatter.matchKickoff(match.kickoff),
+                  style: theme.textTheme.bodySmall),
+              isOpen
+                  ? const TotoBadge('Aperto',
+                      tone: TotoBadgeTone.success, icon: Icons.check_rounded)
+                  : const TotoBadge.locked(),
+            ],
+          ),
+          const SizedBox(height: TotoSpace.md),
+          SizedBox(
+            width: double.infinity,
+            child: isOpen
+                ? FilledButton(
+                    onPressed: () => context.go(RoutePaths.predictions),
+                    child: const Text('Pronostica'),
+                  )
+                : OutlinedButton(
+                    onPressed: null,
+                    child: Text(
+                      match.status == MatchStatus.finished
+                          ? '${match.homeScore} - ${match.awayScore}'
+                          : 'Pronostici chiusi',
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -95,12 +84,13 @@ class _TeamLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final c = context.c;
     final badge = CircleAvatar(
       radius: 16,
-      backgroundColor: AppColors.azzurro.withValues(alpha: 0.16),
+      backgroundColor: c.brand.withValues(alpha: 0.16),
       child: Text(
         code.substring(0, code.length.clamp(0, 3)),
-        style: theme.textTheme.labelSmall?.copyWith(color: AppColors.azzurro),
+        style: theme.textTheme.labelSmall?.copyWith(color: c.brand),
       ),
     );
 
@@ -115,8 +105,8 @@ class _TeamLabel extends StatelessWidget {
 
     return Row(
       children: alignEnd
-          ? [label, const SizedBox(width: 8), badge]
-          : [badge, const SizedBox(width: 8), label],
+          ? [label, const SizedBox(width: TotoSpace.sm), badge]
+          : [badge, const SizedBox(width: TotoSpace.sm), label],
     );
   }
 }

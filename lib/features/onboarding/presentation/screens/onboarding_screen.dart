@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/route_paths.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/toto_theme.dart';
 import '../../domain/onboarding_page_data.dart';
 import '../providers/onboarding_provider.dart';
 
@@ -33,9 +32,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isLast = _index == onboardingPages.length - 1;
+    final c = context.c;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -43,8 +43,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               alignment: Alignment.topRight,
               child: TextButton(
                 onPressed: _finish,
-                child: const Text('Salta',
-                    style: TextStyle(color: AppColors.darkTextSecondary)),
+                child: Text('Salta', style: TextStyle(color: c.textSecondary)),
               ),
             ),
             Expanded(
@@ -57,7 +56,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       return SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: TotoSpace.x3l),
                         child: ConstrainedBox(
                           constraints:
                               BoxConstraints(minHeight: constraints.maxHeight),
@@ -67,33 +67,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               Container(
                                 width: 120,
                                 height: 120,
-                                decoration: const BoxDecoration(
-                                  gradient: AppColors.heroGradient,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [c.brand, c.brandFill],
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(page.icon,
-                                    size: 56, color: Colors.white),
+                                    size: 56, color: c.textOnPrimary),
                               ),
-                              const SizedBox(height: 40),
+                              const SizedBox(height: TotoSpace.x4l),
                               Text(
                                 page.title,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
+                                style: theme.textTheme.headlineLarge,
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: TotoSpace.md),
                               Text(
                                 page.description,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: AppColors.darkTextSecondary,
-                                  fontSize: 16,
-                                  height: 1.4,
-                                ),
+                                style: theme.textTheme.bodyLarge
+                                    ?.copyWith(color: c.textSecondary),
                               ),
                             ],
                           ),
@@ -109,29 +105,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               children: List.generate(onboardingPages.length, (i) {
                 final bool active = i == _index;
                 return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: TotoMotion.fast,
+                  curve: TotoMotion.standard,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   width: active ? 22 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: active ? AppColors.azzurro : AppColors.darkBorder,
-                    borderRadius: AppRadii.pillRadius,
+                    color: active ? c.brand : c.borderStrong,
+                    borderRadius: BorderRadius.circular(TotoRadius.full),
                   ),
                 );
               }),
             ),
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(TotoSpace.xxl),
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: FilledButton(
                   onPressed: isLast
                       ? _finish
                       : () => _controller.nextPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOut,
+                            duration: TotoMotion.base,
+                            curve: TotoMotion.standard,
                           ),
-                  child: Text(isLast ? 'INIZIA ORA' : 'AVANTI'),
+                  child: Text(isLast ? 'Inizia ora' : 'Avanti'),
                 ),
               ),
             ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/toto_theme.dart';
 import 'fade_slide_in.dart';
 
 /// Vista di caricamento standard, da usare al posto di
@@ -12,20 +12,21 @@ class AppLoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.c;
     return Center(
       child: FadeSlideIn(
         offset: const Offset(0, 0.02),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
+            SizedBox(
               width: 22,
               height: 22,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2.4, color: AppColors.azzurro),
+              child:
+                  CircularProgressIndicator(strokeWidth: 2.4, color: c.brand),
             ),
             if (message != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: TotoSpace.lg),
               Text(message!, style: Theme.of(context).textTheme.bodyMedium),
             ],
           ],
@@ -47,30 +48,31 @@ class AppErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final c = context.c;
     return Center(
       child: FadeSlideIn(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(TotoSpace.xxl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(TotoSpace.md),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.12),
+                  color: c.dangerContainer,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.error_outline_rounded,
-                    color: AppColors.error, size: 28),
+                child: Icon(Icons.error_outline_rounded,
+                    color: c.danger, size: 28),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: TotoSpace.md),
               Text(
                 message,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium,
               ),
               if (onRetry != null) ...[
-                const SizedBox(height: 18),
+                const SizedBox(height: TotoSpace.xl),
                 OutlinedButton(
                     onPressed: onRetry, child: const Text('Riprova')),
               ],
@@ -100,35 +102,35 @@ class AppEmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final c = context.c;
     return Center(
       child: FadeSlideIn(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(TotoSpace.xxl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(TotoSpace.lg),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
+                  color: c.surface2,
                   shape: BoxShape.circle,
+                  border: Border.all(color: c.borderSubtle),
                 ),
-                child: Icon(icon,
-                    size: 30,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45)),
+                child: Icon(icon, size: 30, color: c.brand),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: TotoSpace.xl),
               Text(title,
-                  style: theme.textTheme.titleMedium,
+                  style: theme.textTheme.headlineSmall,
                   textAlign: TextAlign.center),
               if (subtitle != null) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: TotoSpace.sm),
                 Text(subtitle!,
-                    style: theme.textTheme.bodySmall,
+                    style: theme.textTheme.bodyMedium,
                     textAlign: TextAlign.center),
               ],
               if (action != null) ...[
-                const SizedBox(height: 20),
+                const SizedBox(height: TotoSpace.xl),
                 action!,
               ],
             ],

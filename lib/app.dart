@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/routing/app_router.dart';
-import 'core/theme/app_theme.dart';
+import 'core/theme/toto_theme.dart';
 
 class TotoItalianoApp extends ConsumerWidget {
   const TotoItalianoApp({super.key});
@@ -15,8 +15,8 @@ class TotoItalianoApp extends ConsumerWidget {
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      theme: TotoTheme.light(),
+      darkTheme: TotoTheme.dark(),
       themeMode: ThemeMode.dark,
       routerConfig: router,
     );
