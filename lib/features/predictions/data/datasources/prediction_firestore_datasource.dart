@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/firestore_paths.dart';
 import '../../domain/entities/prediction.dart';
 
-/// Un pronostico da salvare come parte della schedina: la scelta di un
-/// solo mercato per una partita.
+/// Un pronostico da salvare come parte della schedina di una lega: la
+/// scelta di un solo mercato per una partita.
 class PredictionPick {
   const PredictionPick({
     required this.matchId,
@@ -37,18 +37,21 @@ class PredictionFirestoreDatasource {
   CollectionReference<Map<String, dynamic>> get _predictions =>
       _firestore.collection(FirestorePaths.predictions);
 
-  String _docId(String userId, String matchId) => '${userId}_$matchId';
+  String _docId(String userId, String leagueId, String matchId) =>
+      '${userId}_${leagueId}_$matchId';
 
-  /// Salva l'intera schedina (uno o più pronostici) in un'unica scrittura
-  /// atomica: o vengono salvati tutti, o nessuno.
-  Future<void> saveSchedina(String userId, List<PredictionPick> picks) async {
+  /// Salva l'intera schedina di [leagueId] (uno o più pronostici) in
+  /// un'unica scrittura atomica: o vengono salvati tutti, o nessuno.
+  Future<void> saveSchedina(
+      String userId, String leagueId, List<PredictionPick> picks) async {
     final batch = _firestore.batch();
     for (final pick in picks) {
-      final docRef = _predictions.doc(_docId(userId, pick.matchId));
+      final docRef = _predictions.doc(_docId(userId, leagueId, pick.matchId));
       batch.set(
           docRef,
           {
             'userId': userId,
+            'leagueId': leagueId,
             'matchId': pick.matchId,
             'competitionId': pick.competitionId,
             'matchdayId': pick.matchdayId,
@@ -66,34 +69,20 @@ class PredictionFirestoreDatasource {
     await batch.commit();
   }
 
-  Future<Prediction?> get(String userId, String matchId) async {
-    final doc = await _predictions.doc(_docId(userId, matchId)).get();
-    return _fromDoc(doc);
-  }
-
-  Stream<Prediction?> watch(String userId, String matchId) {
-    return _predictions.doc(_docId(userId, matchId)).snapshots().map(_fromDoc);
-  }
-
   Stream<List<Prediction>> watchForUser(String userId) {
     return _predictions.where('userId', isEqualTo: userId).snapshots().map(
           (snapshot) => snapshot.docs.map(_fromDocRequired).toList(),
         );
   }
 
-  Stream<List<Prediction>> watchForUserAndMatchday(
-      String userId, String matchdayId) {
+  Stream<List<Prediction>> watchForUserLeagueAndMatchday(
+      String userId, String leagueId, String matchdayId) {
     return _predictions
         .where('userId', isEqualTo: userId)
+        .where('leagueId', isEqualTo: leagueId)
         .where('matchdayId', isEqualTo: matchdayId)
         .snapshots()
         .map((snapshot) => snapshot.docs.map(_fromDocRequired).toList());
-  }
-
-  Prediction? _fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data();
-    if (data == null) return null;
-    return _mapToPrediction(doc.id, data);
   }
 
   Prediction _fromDocRequired(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
@@ -106,6 +95,7 @@ class PredictionFirestoreDatasource {
     return Prediction(
       id: id,
       userId: data['userId'] as String? ?? '',
+      leagueId: data['leagueId'] as String? ?? '',
       matchId: data['matchId'] as String? ?? '',
       competitionId: data['competitionId'] as String? ?? '',
       matchdayId: data['matchdayId'] as String? ?? '',

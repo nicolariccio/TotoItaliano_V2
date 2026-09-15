@@ -86,19 +86,21 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // predictions/{userId}_{matchId} — un documento per coppia utente/partita,
-    // parte della "schedina" dell'utente per una giornata. Un solo mercato
-    // per pronostico (result1x2 | goalNoGoal | overUnder25 | exactScore),
-    // coerente con la UI che fa scegliere un tipo di pronostico a partita.
+    // predictions/{userId}_{leagueId}_{matchId} — un documento per tripla
+    // utente/lega/partita: la schedina è indipendente per ciascuna lega
+    // (come su totoamici.net), quindi lo stesso utente può avere un
+    // pronostico diverso sulla stessa partita in leghe diverse. Un solo
+    // mercato per pronostico (result1x2 | goalNoGoal | overUnder25 |
+    // exactScore), coerente con la UI che fa scegliere un tipo di
+    // pronostico a partita.
     //
-    // Il pronostico richiede che l'utente faccia parte di almeno una lega
-    // (regola di prodotto: "niente schedina senza lega"), verificato qui
-    // leggendo `users/{uid}.leagueCount`, che è scrivibile SOLO dalle
-    // transazioni di creazione/adesione lega (vedi regola `users` sopra) —
-    // quindi non è un valore che il client possa falsificare a piacere.
+    // Il pronostico richiede che l'utente sia membro DI QUELLA lega
+    // specifica (non solo di una qualunque): verificato con exists() sul
+    // documento membro, l'unica fonte di verità sull'appartenenza — non
+    // un contatore denormalizzato che potrebbe riferirsi a un'altra lega.
     //
     // NOTA IMPORTANTE sul blocco al kickoff: qui sotto valida solo la forma
-    // dei dati, la proprietà del documento e l'appartenenza a una lega. Le
+    // dei dati, la proprietà del documento e l'appartenenza alla lega. Le
     // partite arrivano da api-football chiamata direttamente dal client
     // (ApiFootballDataService, piano Spark: vedi nota sopra) e non sono
     // sincronizzate su Firestore, quindi queste regole NON possono
@@ -112,14 +114,15 @@ service cloud.firestore {
     // (che scrive matches/{matchId}.predictionLocked con l'Admin SDK, non
     // falsificabile dal client — la regola tornerebbe a leggerlo qui).
     match /predictions/{predictionId} {
-      function hasLeague() {
-        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.leagueCount > 0;
+      function isLeagueMember(leagueId) {
+        return exists(/databases/$(database)/documents/leagues/$(leagueId)/members/$(request.auth.uid));
       }
 
       function isValidPredictionWrite() {
         let data = request.resource.data;
         return data.userId == request.auth.uid
-          && predictionId == request.auth.uid + '_' + data.matchId
+          && data.leagueId is string && data.leagueId.size() > 0
+          && predictionId == request.auth.uid + '_' + data.leagueId + '_' + data.matchId
           && data.market in ['result1x2', 'goalNoGoal', 'overUnder25', 'exactScore']
           && (!('result1x2Value' in data) || data.result1x2Value == null || data.result1x2Value in ['1', 'X', '2'])
           && (!('goalNoGoalValue' in data) || data.goalNoGoalValue == null || data.goalNoGoalValue is bool)
@@ -131,11 +134,12 @@ service cloud.firestore {
       }
 
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && hasLeague() && isValidPredictionWrite();
+      allow create: if isSignedIn() && isLeagueMember(request.resource.data.leagueId) && isValidPredictionWrite();
       allow update: if isSignedIn()
         && resource.data.userId == request.auth.uid
         && request.resource.data.matchId == resource.data.matchId
-        && hasLeague()
+        && request.resource.data.leagueId == resource.data.leagueId
+        && isLeagueMember(request.resource.data.leagueId)
         && isValidPredictionWrite();
       allow delete: if false;
     }

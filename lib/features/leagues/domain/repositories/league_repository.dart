@@ -19,4 +19,9 @@ abstract class LeagueRepository {
 
   /// Vero se l'utente corrente è membro di almeno una lega.
   Future<bool> hasAnyLeague();
+
+  /// Vero se l'utente corrente è membro di [leagueId] specificamente —
+  /// usato per validare lato client il salvataggio di una schedina di
+  /// lega prima ancora di arrivare alle Security Rules.
+  Future<bool> isMember(String leagueId);
 }

@@ -7,14 +7,18 @@ part 'prediction.freezed.dart';
 /// della schedina.
 enum PredictionMarket { result1x2, goalNoGoal, overUnder25, exactScore }
 
-/// Il pronostico di un utente per una partita — un documento per coppia
-/// (utente, partita), id Firestore: `{userId}_{matchId}`. Fa parte della
-/// "schedina" della giornata, salvata in blocco per tutte le partite.
+/// Il pronostico di un utente per una partita, indipendente per ciascuna
+/// lega: un documento per tripla (utente, lega, partita), id Firestore
+/// `{userId}_{leagueId}_{matchId}`. Lo stesso utente può pronosticare in
+/// modo diverso la stessa partita in leghe diverse — ogni lega ha la
+/// propria schedina, come su totoamici.net. Fa parte della schedina della
+/// giornata per quella lega, salvata in blocco per tutte le partite.
 @freezed
 abstract class Prediction with _$Prediction {
   const factory Prediction({
     required String id,
     required String userId,
+    required String leagueId,
     required String matchId,
     required String competitionId,
     required String matchdayId,

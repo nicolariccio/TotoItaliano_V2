@@ -3,9 +3,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Scaffold persistente con bottom navigation a 5 sezioni. Ogni branch di
+/// Scaffold persistente con bottom navigation a 4 sezioni. Ogni branch di
 /// [StatefulShellRoute] mantiene il proprio stack di navigazione, cosi'
 /// tornare su un tab non perde la posizione di scroll/navigazione.
+///
+/// Niente più tab "Pronostici" a sé stante: la schedina è indipendente
+/// per lega (vedi LeagueDetailScreen), quindi si entra sempre passando
+/// da una lega specifica — Home o Leghe — non da un tab globale.
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key, required this.navigationShell});
 
@@ -16,10 +20,6 @@ class HomeShell extends StatelessWidget {
         icon: Icons.home_outlined,
         selectedIcon: Icons.home_rounded,
         label: 'Home'),
-    _NavItem(
-        icon: Icons.sports_soccer_outlined,
-        selectedIcon: Icons.sports_soccer_rounded,
-        label: 'Pronostici'),
     _NavItem(
         icon: Icons.emoji_events_outlined,
         selectedIcon: Icons.emoji_events_rounded,

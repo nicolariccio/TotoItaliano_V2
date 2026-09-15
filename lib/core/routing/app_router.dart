@@ -16,7 +16,6 @@ import '../../features/leagues/presentation/screens/leagues_screen.dart';
 import '../../features/onboarding/presentation/providers/onboarding_provider.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
-import '../../features/predictions/presentation/screens/predictions_screen.dart';
 import '../../features/profile/presentation/screens/prediction_history_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
@@ -119,11 +118,6 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(
                 path: RoutePaths.home,
                 builder: (context, state) => const HomeScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-                path: RoutePaths.predictions,
-                builder: (context, state) => const PredictionsScreen()),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(

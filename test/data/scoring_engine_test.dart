@@ -42,8 +42,9 @@ void main() {
     bool? overUnder25Value,
   }) {
     return Prediction(
-      id: 'u1_m1',
+      id: 'u1_l1_m1',
       userId: 'u1',
+      leagueId: 'l1',
       matchId: 'm1',
       competitionId: 'c1',
       matchdayId: 'md1',

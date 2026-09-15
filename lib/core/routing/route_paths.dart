@@ -12,7 +12,6 @@ class RoutePaths {
   static const String forgotPassword = '/forgot-password';
 
   static const String home = '/home';
-  static const String predictions = '/predictions';
   static const String leaderboard = '/leaderboard';
   static const String leagues = '/leagues';
   static const String profile = '/profile';

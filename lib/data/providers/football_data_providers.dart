@@ -3,22 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/competition.dart';
 import '../models/match.dart';
 import '../models/matchday.dart';
-import '../services/api_football_data_service.dart';
 import '../services/football_data_service.dart';
+import '../services/mock_football_data_service.dart';
 
 /// Unico punto in cui l'app sceglie l'implementazione concreta di
-/// [FootballDataService]. [ApiFootballDataService] chiama api-football
-/// attraverso il proxy Cloudflare Worker in cf-worker/ (necessario perché
-/// api-sports.io blocca CORS dal browser — vedi commento nella classe): la
-/// vera API key resta un secret del worker, mai nel bundle dell'app.
-/// [MockFootballDataService] resta disponibile per i test. Se in futuro si
-/// passa al piano Blaze di Firebase, [FirestoreFootballDataService] (già
-/// scritta, dati sincronizzati da una Cloud Function in functions/) è
-/// pronta a sostituire questa riga con un'architettura equivalente lato
-/// Firebase invece che Cloudflare.
+/// [FootballDataService]. Integrazione api-football disattivata per ora
+/// (su richiesta esplicita): si torna a [MockFootballDataService], dati
+/// demo sempre disponibili senza dipendenze esterne. Il resto dello stack
+/// (ApiFootballDataService + cf-worker/, FirestoreFootballDataService +
+/// functions/) resta nel repo, inattivo, pronto a essere riattivato
+/// cambiando solo questa riga.
 final Provider<FootballDataService> footballDataServiceProvider =
     Provider<FootballDataService>(
-  (ref) => ApiFootballDataService(),
+  (ref) => MockFootballDataService(),
 );
 
 final FutureProvider<List<Competition>> competitionsProvider =

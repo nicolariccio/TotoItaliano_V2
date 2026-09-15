@@ -111,4 +111,11 @@ class LeagueRepositoryImpl implements LeagueRepository {
     if (uid == null) return false;
     return _leagueDatasource.hasAnyLeague(uid);
   }
+
+  @override
+  Future<bool> isMember(String leagueId) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return false;
+    return _leagueDatasource.isMember(leagueId, uid);
+  }
 }

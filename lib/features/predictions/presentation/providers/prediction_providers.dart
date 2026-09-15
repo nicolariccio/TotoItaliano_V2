@@ -23,28 +23,24 @@ final Provider<PredictionRepository> predictionRepositoryProvider =
   ),
 );
 
-/// Pronostico salvato dall'utente corrente per una partita, reattivo a
-/// login/logout (segue lo stesso pattern di [currentUserProvider]).
-final StreamProviderFamily<Prediction?, String> predictionForMatchProvider =
-    StreamProvider.family<Prediction?, String>((ref, matchId) {
-  ref.watch(authStateChangesProvider);
-  return ref.watch(predictionRepositoryProvider).watchPrediction(matchId);
-});
-
-/// Tutti i pronostici dell'utente corrente (storico), reattivo a login/logout.
+/// Tutti i pronostici dell'utente corrente in tutte le sue leghe (storico),
+/// reattivo a login/logout.
 final StreamProvider<List<Prediction>> myPredictionsProvider =
     StreamProvider<List<Prediction>>((ref) {
   ref.watch(authStateChangesProvider);
   return ref.watch(predictionRepositoryProvider).watchMyPredictions();
 });
 
-/// I pronostici già salvati dall'utente per la giornata corrente, per
-/// precompilare la schedina.
-final StreamProviderFamily<List<Prediction>, String>
-    myPredictionsForMatchdayProvider =
-    StreamProvider.family<List<Prediction>, String>((ref, matchdayId) {
+/// Chiave composita lega+giornata per la schedina di una lega specifica.
+typedef LeagueMatchdayKey = ({String leagueId, String matchdayId});
+
+/// I pronostici già salvati dall'utente per [key.leagueId] nella giornata
+/// [key.matchdayId], per precompilare la schedina di quella lega.
+final StreamProviderFamily<List<Prediction>, LeagueMatchdayKey>
+    myPredictionsForLeagueAndMatchdayProvider =
+    StreamProvider.family<List<Prediction>, LeagueMatchdayKey>((ref, key) {
   ref.watch(authStateChangesProvider);
   return ref
       .watch(predictionRepositoryProvider)
-      .watchMyPredictionsForMatchday(matchdayId);
+      .watchMyPredictionsForLeagueAndMatchday(key.leagueId, key.matchdayId);
 });

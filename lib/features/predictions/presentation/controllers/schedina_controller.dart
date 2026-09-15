@@ -8,18 +8,24 @@ import '../../domain/entities/prediction.dart';
 import '../providers/prediction_providers.dart';
 import 'schedina_state.dart';
 
+/// Un controller per lega: la schedina di ogni lega è indipendente dalle
+/// altre, quindi lo stato (picks, salvataggio) non può essere condiviso
+/// fra leghe diverse — da qui il provider family keyato su leagueId.
 class SchedinaController extends StateNotifier<SchedinaState> {
-  SchedinaController(this._ref) : super(const SchedinaState()) {
+  SchedinaController(this._ref, this.leagueId) : super(const SchedinaState()) {
     _load();
   }
 
   final Ref _ref;
+  final String leagueId;
 
   Future<void> _load() async {
     try {
       final matchday = await _ref.read(currentMatchdayProvider.future);
-      final predictions =
-          await _ref.read(myPredictionsForMatchdayProvider(matchday.id).future);
+      final predictions = await _ref.read(
+          myPredictionsForLeagueAndMatchdayProvider(
+                  (leagueId: leagueId, matchdayId: matchday.id))
+              .future);
       final picks = {
         for (final p in predictions) p.matchId: PickState.fromPrediction(p)
       };
@@ -80,7 +86,7 @@ class SchedinaController extends StateNotifier<SchedinaState> {
         ));
       }
 
-      await _ref.read(predictionRepositoryProvider).saveSchedina(picks);
+      await _ref.read(predictionRepositoryProvider).saveSchedina(leagueId, picks);
       state = state.copyWith(isSaving: false, savedSuccessfully: true);
     } catch (error) {
       state = state.copyWith(
@@ -89,7 +95,8 @@ class SchedinaController extends StateNotifier<SchedinaState> {
   }
 }
 
-final StateNotifierProvider<SchedinaController, SchedinaState>
-    schedinaControllerProvider =
-    StateNotifierProvider<SchedinaController, SchedinaState>(
-        (ref) => SchedinaController(ref));
+final StateNotifierProviderFamily<SchedinaController, SchedinaState, String>
+    schedinaControllerProvider = StateNotifierProvider.family<
+        SchedinaController, SchedinaState, String>(
+  (ref, leagueId) => SchedinaController(ref, leagueId),
+);

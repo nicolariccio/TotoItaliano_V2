@@ -8,6 +8,7 @@ import '../../../../core/widgets/toto_widgets.dart';
 import '../../../../data/models/match.dart';
 import '../../../../data/providers/football_data_providers.dart';
 import '../../../../data/scoring/scoring_engine.dart';
+import '../../../leagues/presentation/providers/league_providers.dart';
 import '../../../predictions/domain/entities/prediction.dart';
 import '../../../predictions/presentation/providers/prediction_providers.dart';
 
@@ -73,7 +74,7 @@ class _PredictionHistoryTile extends ConsumerWidget {
   }
 }
 
-class _PredictionCard extends StatelessWidget {
+class _PredictionCard extends ConsumerWidget {
   const _PredictionCard({required this.prediction, required this.match});
 
   final Prediction prediction;
@@ -93,8 +94,10 @@ class _PredictionCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final c = context.c;
+    final leagueAsync = ref.watch(leagueByIdProvider(prediction.leagueId));
     final isFinished = match.status == MatchStatus.finished;
     final result = isFinished
         ? ScoringEngine.calculate(prediction: prediction, match: match)
@@ -104,6 +107,11 @@ class _PredictionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (leagueAsync.value != null) ...[
+            Text(leagueAsync.value!.name.toUpperCase(),
+                style: theme.textTheme.labelSmall?.copyWith(color: c.brand)),
+            const SizedBox(height: TotoSpace.xxs),
+          ],
           Row(
             children: [
               Expanded(
