@@ -105,6 +105,8 @@ class PredictionFirestoreDatasource {
       overUnder25Value: data['overUnder25Value'] as bool?,
       exactHomeScore: (data['exactHomeScore'] as num?)?.toInt(),
       exactAwayScore: (data['exactAwayScore'] as num?)?.toInt(),
+      pointsAwarded: (data['pointsAwarded'] as num?)?.toInt(),
+      correct: data['correct'] as bool?,
       createdAt: createdAt is Timestamp ? createdAt.toDate() : DateTime.now(),
       updatedAt: updatedAt is Timestamp ? updatedAt.toDate() : DateTime.now(),
     );

@@ -14,6 +14,17 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Admin globale: gestisce i dati calcistici ufficiali (condivisi da
+    // tutte le leghe) e il ricalcolo punteggi dopo un risultato. `role` non
+    // è MAI scrivibile dal client (vedi la regola di update su users/{uid}
+    // sotto: il campo non è nella whitelist), quindi leggerlo qui con
+    // get() è una vera verifica server-side, non falsificabile modificando
+    // il client — lo stesso principio di isLeagueMember() con exists().
+    function isGlobalAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     // users/{uid} — profilo pubblico (letto da leaderboard/lega/profilo).
     match /users/{userId} {
       allow read: if isSignedIn();
@@ -53,37 +64,35 @@ service cloud.firestore {
     }
 
     // competitions/{competitionId} (+ teams/matchdays), matches/{matchId},
-    // standings/{competitionId} — pensate per dati calcistici sincronizzati
-    // da api-football tramite Cloud Function (vedi functions/src/sync.ts).
-    // Al momento QUESTA STRADA NON È ATTIVA: il progetto Firebase resta sul
-    // piano Spark per scelta esplicita dell'utente (le Cloud Functions
-    // richiedono Blaze), quindi l'app legge api-football direttamente dal
-    // client (vedi ApiFootballDataService) e queste collezioni restano
-    // vuote. Le regole restano qui, di sola lettura e mai scrivibili dal
-    // client, pronte per il giorno in cui si riattiva quella strada.
+    // standings/{competitionId} — dati calcistici ufficiali, condivisi da
+    // tutte le leghe. L'integrazione api-football è disattivata (piano
+    // Spark, nessuna Cloud Function): al suo posto un admin globale
+    // (isGlobalAdmin()) gestisce competizione/giornate/partite/risultati
+    // direttamente dall'app (vedi AdminFootballDatasource). Tutti gli
+    // utenti autenticati possono leggere, solo l'admin può scrivere.
     match /competitions/{competitionId} {
       allow read: if isSignedIn();
-      allow write: if false;
+      allow write: if isGlobalAdmin();
 
       match /teams/{teamId} {
         allow read: if isSignedIn();
-        allow write: if false;
+        allow write: if isGlobalAdmin();
       }
 
       match /matchdays/{matchdayId} {
         allow read: if isSignedIn();
-        allow write: if false;
+        allow write: if isGlobalAdmin();
       }
     }
 
     match /matches/{matchId} {
       allow read: if isSignedIn();
-      allow write: if false;
+      allow write: if isGlobalAdmin();
     }
 
     match /standings/{competitionId} {
       allow read: if isSignedIn();
-      allow write: if false;
+      allow write: if isGlobalAdmin();
     }
 
     // predictions/{userId}_{leagueId}_{matchId} — un documento per tripla
@@ -135,12 +144,22 @@ service cloud.firestore {
 
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && isLeagueMember(request.resource.data.leagueId) && isValidPredictionWrite();
-      allow update: if isSignedIn()
-        && resource.data.userId == request.auth.uid
-        && request.resource.data.matchId == resource.data.matchId
-        && request.resource.data.leagueId == resource.data.leagueId
-        && isLeagueMember(request.resource.data.leagueId)
-        && isValidPredictionWrite();
+
+      // Due soli scriventi in update: il proprietario del pronostico (che
+      // può solo cambiare la propria scelta, non il risultato), oppure
+      // l'admin globale dopo un risultato ufficiale, che può SOLO scrivere
+      // pointsAwarded/correct — sostituisce la Cloud Function di scoring
+      // mai attivata (vedi ScoringRecomputeDatasource).
+      allow update: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid
+          && request.resource.data.matchId == resource.data.matchId
+          && request.resource.data.leagueId == resource.data.leagueId
+          && isLeagueMember(request.resource.data.leagueId)
+          && isValidPredictionWrite())
+        ||
+        (isGlobalAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pointsAwarded', 'correct']))
+      );
       allow delete: if false;
     }
 
@@ -154,10 +173,15 @@ service cloud.firestore {
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.memberCount == 1;
 
-      // Due soli casi ammessi in update:
-      // 1) il proprietario modifica i metadati (non tocca campi immutabili);
+      // Tre soli casi ammessi in update:
+      // 1) il proprietario modifica i metadati (non tocca campi immutabili,
+      //    incluso memberCount — copre anche la modifica di scoringConfig,
+      //    che non è in questa whitelist perché qui non ce n'è una: quel
+      //    branch permette qualunque campo tranne i tre bloccati);
       // 2) chiunque si unisca incrementa memberCount di esattamente 1 e
-      //    nient'altro (è quanto fa la transazione di adesione).
+      //    nient'altro (è quanto fa la transazione di adesione);
+      // 3) il proprietario rimuove un membro, decrementando memberCount di
+      //    esattamente 1 e nient'altro (transazione simmetrica alla 2).
       allow update: if isSignedIn() && (
         (resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
@@ -166,6 +190,10 @@ service cloud.firestore {
         ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
           && request.resource.data.memberCount == resource.data.memberCount + 1)
+        ||
+        (resource.data.ownerId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
+          && request.resource.data.memberCount == resource.data.memberCount - 1)
       );
 
       allow delete: if false;
@@ -185,13 +213,40 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.totalPoints == 0;
 
-      // I punti restano di competenza server-side (Cloud Function,
-      // Phase 9): dal client si aggiorna solo il profilo denormalizzato.
-      allow update: if isSignedIn()
-        && resource.data.userId == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['username', 'photoUrl']);
+      // Due soli scriventi in update: il membro stesso (solo username/foto
+      // denormalizzati), oppure l'admin globale che aggiorna i punteggi
+      // dopo un risultato (totalPoints/last5/exactCount, vedi
+      // ScoringRecomputeDatasource) — nessun altro campo.
+      allow update: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['username', 'photoUrl']))
+        ||
+        (isGlobalAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalPoints', 'last5', 'exactCount']))
+      );
 
-      allow delete: if false;
+      // Solo il proprietario della lega può rimuovere un membro (mai se
+      // stesso, per non lasciare la lega orfana — l'app non offre
+      // comunque questa azione su se stessi).
+      allow delete: if isSignedIn()
+        && resource.data.userId != request.auth.uid
+        && get(/databases/$(database)/documents/leagues/$(resource.data.leagueId)).data.ownerId == request.auth.uid;
+    }
+
+    // leagues/{leagueId}/matchdayConfig/{matchdayId} — quali partite della
+    // giornata contano per QUESTA lega (default: tutte, vedi
+    // LeagueMatchdayConfig). Letta da ogni membro per costruire la propria
+    // schedina, scritta solo dal proprietario della lega.
+    match /leagues/{leagueId}/matchdayConfig/{matchdayId} {
+      function isLeagueMemberOf(id) {
+        return exists(/databases/$(database)/documents/leagues/$(id)/members/$(request.auth.uid));
+      }
+
+      allow read: if isSignedIn() && isLeagueMemberOf(leagueId);
+      allow write: if isSignedIn()
+        && get(/databases/$(database)/documents/leagues/$(leagueId)).data.ownerId == request.auth.uid
+        && request.resource.data.leagueId == leagueId
+        && request.resource.data.matchdayId == matchdayId;
     }
 
     // Tutto il resto arriva nelle fasi successive insieme alla feature

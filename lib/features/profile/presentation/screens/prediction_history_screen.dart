@@ -7,6 +7,7 @@ import '../../../../core/widgets/state_views.dart';
 import '../../../../core/widgets/toto_widgets.dart';
 import '../../../../data/models/match.dart';
 import '../../../../data/providers/football_data_providers.dart';
+import '../../../../data/scoring/scoring_breakdown.dart';
 import '../../../../data/scoring/scoring_engine.dart';
 import '../../../leagues/presentation/providers/league_providers.dart';
 import '../../../predictions/domain/entities/prediction.dart';
@@ -99,9 +100,20 @@ class _PredictionCard extends ConsumerWidget {
     final c = context.c;
     final leagueAsync = ref.watch(leagueByIdProvider(prediction.leagueId));
     final isFinished = match.status == MatchStatus.finished;
-    final result = isFinished
-        ? ScoringEngine.calculate(prediction: prediction, match: match)
-        : null;
+    // Se l'admin ha già segnato questo pronostico, usa i punti persistiti
+    // (coerenti con quanto realmente accreditato in classifica) invece di
+    // ricalcolare al volo — il calcolo live resta solo un fallback per la
+    // finestra tra "partita conclusa" e "admin ha inserito il risultato".
+    final result = prediction.pointsAwarded != null
+        ? ScoringResult(
+            market: prediction.market,
+            correct: prediction.correct ?? false,
+            points: prediction.pointsAwarded!,
+          )
+        : (isFinished
+            ? ScoringEngine.calculate(prediction: prediction, match: match)
+            : null);
+    final isPendingRecompute = isFinished && prediction.pointsAwarded == null;
 
     return TotoCard(
       child: Column(
@@ -121,7 +133,12 @@ class _PredictionCard extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (result != null)
+              if (isPendingRecompute)
+                const TotoBadge('In elaborazione',
+                    tone: TotoBadgeTone.neutral,
+                    icon: Icons.hourglass_top_rounded,
+                    uppercase: false)
+              else if (result != null)
                 TotoBadge.points(result.points)
               else
                 const TotoBadge('In attesa',

@@ -14,6 +14,7 @@ class FirestorePaths {
   static const String predictions = 'predictions';
   static const String leagues = 'leagues';
   static const String leagueMembersSubcollection = 'members';
+  static const String leagueMatchdayConfigSubcollection = 'matchdayConfig';
   static const String scores = 'scores';
   static const String referrals = 'referrals';
   static const String payments = 'payments';

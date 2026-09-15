@@ -4,7 +4,9 @@ import '../../../../core/errors/app_exception_mapper.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/utils/code_generator.dart';
 import '../../../../data/models/league.dart';
+import '../../../../data/models/league_matchday_config.dart';
 import '../../../../data/models/league_member.dart';
+import '../../../../data/models/scoring_config.dart';
 import '../../../auth/data/datasources/user_firestore_datasource.dart';
 import '../../domain/repositories/league_repository.dart';
 import '../datasources/league_firestore_datasource.dart';
@@ -117,5 +119,41 @@ class LeagueRepositoryImpl implements LeagueRepository {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return false;
     return _leagueDatasource.isMember(leagueId, uid);
+  }
+
+  @override
+  Future<void> updateScoringConfig(
+      String leagueId, ScoringConfig config) async {
+    try {
+      await _leagueDatasource.updateScoringConfig(leagueId, config);
+    } catch (error) {
+      throw AppExceptionMapper.map(error);
+    }
+  }
+
+  @override
+  Stream<LeagueMatchdayConfig> watchMatchdayConfig(
+      String leagueId, String matchdayId) {
+    return _leagueDatasource.watchMatchdayConfig(leagueId, matchdayId);
+  }
+
+  @override
+  Future<void> setExcludedMatches(
+      String leagueId, String matchdayId, List<String> excludedMatchIds) async {
+    try {
+      await _leagueDatasource.setExcludedMatches(
+          leagueId, matchdayId, excludedMatchIds);
+    } catch (error) {
+      throw AppExceptionMapper.map(error);
+    }
+  }
+
+  @override
+  Future<void> removeMember(String leagueId, String userId) async {
+    try {
+      await _leagueDatasource.removeMember(leagueId, userId);
+    } catch (error) {
+      throw AppExceptionMapper.map(error);
+    }
   }
 }

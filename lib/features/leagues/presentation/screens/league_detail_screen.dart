@@ -3,17 +3,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/toto_theme.dart';
+import '../../../../core/utils/error_snackbar.dart';
 import '../../../../core/widgets/podium_leaderboard.dart';
 import '../../../../core/widgets/ranked_entry.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../../core/widgets/toto_widgets.dart';
+import '../../../../data/models/league.dart';
+import '../../../../data/models/league_member.dart';
+import '../../../../data/models/scoring_config.dart';
 import '../../../../data/providers/football_data_providers.dart';
+import '../../../auth/presentation/providers/current_user_provider.dart';
 import '../../../predictions/presentation/controllers/schedina_controller.dart';
 import '../../../predictions/presentation/controllers/schedina_state.dart';
 import '../../../predictions/presentation/widgets/schedina_row.dart';
 import '../providers/league_providers.dart';
 
-enum _LeagueTab { classifica, schedina }
+enum _LeagueTab { classifica, schedina, gestione }
 
 /// Dettaglio di una lega: classifica e schedina sono entrambe scoperte
 /// da qui, non da tab globali — ogni lega ha la sua schedina indipendente
@@ -50,6 +55,14 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
           }
 
           final c = context.c;
+          final currentUserId = ref.watch(currentUserProvider).valueOrNull?.id;
+          final isOwner = currentUserId != null && currentUserId == league.ownerId;
+          final tabs = [
+            _LeagueTab.classifica,
+            _LeagueTab.schedina,
+            if (isOwner) _LeagueTab.gestione,
+          ];
+          final effectiveTab = tabs.contains(_tab) ? _tab : _LeagueTab.classifica;
 
           return Column(
             children: [
@@ -109,21 +122,23 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
                     ),
                     const SizedBox(height: TotoSpace.md),
                     TotoSegmented<_LeagueTab>(
-                      values: _LeagueTab.values,
+                      values: tabs,
                       labels: (t) => switch (t) {
                         _LeagueTab.classifica => 'Classifica',
                         _LeagueTab.schedina => 'Schedina',
+                        _LeagueTab.gestione => 'Gestione',
                       },
-                      selected: _tab,
+                      selected: effectiveTab,
                       onChanged: (t) => setState(() => _tab = t),
                     ),
                   ],
                 ),
               ),
               Expanded(
-                child: switch (_tab) {
+                child: switch (effectiveTab) {
                   _LeagueTab.classifica => _ClassificaTab(leagueId: widget.leagueId),
                   _LeagueTab.schedina => _SchedinaTab(leagueId: widget.leagueId),
+                  _LeagueTab.gestione => _GestioneTab(league: league),
                 },
               ),
             ],
@@ -157,6 +172,8 @@ class _ClassificaTab extends ConsumerWidget {
               username: member.username,
               photoUrl: member.photoUrl,
               points: member.totalPoints,
+              last5: member.last5,
+              exactCount: member.exactCount,
             ),
         ],
       ),
@@ -173,6 +190,19 @@ class _SchedinaTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final matchdayAsync = ref.watch(currentMatchdayProvider);
     final matchesAsync = ref.watch(currentMatchdayMatchesProvider);
+    // Chiave stabile anche prima che la giornata sia caricata: la config
+    // di una giornata inesistente ('') torna semplicemente nessuna
+    // esclusione, innocuo finché non usiamo il risultato (solo dopo i
+    // controlli di isLoading/error più sotto, quando la giornata è certa).
+    final excludedMatchIds = ref
+            .watch(leagueMatchdayConfigProvider((
+              leagueId: leagueId,
+              matchdayId: matchdayAsync.valueOrNull?.id ?? '',
+            )))
+            .valueOrNull
+            ?.excludedMatchIds
+            .toSet() ??
+        const <String>{};
     final schedina = ref.watch(schedinaControllerProvider(leagueId));
     final controller = ref.read(schedinaControllerProvider(leagueId).notifier);
     final c = context.c;
@@ -204,11 +234,14 @@ class _SchedinaTab extends ConsumerWidget {
       );
     }
 
-    final matches = matchesAsync.value!;
+    final matches = matchesAsync.value!
+        .where((m) => !excludedMatchIds.contains(m.id))
+        .toList();
     if (matches.isEmpty) {
       return const AppEmptyView(
         title: 'Nessuna partita in programma',
-        subtitle: 'Torna più tardi per la prossima giornata.',
+        subtitle: 'Torna più tardi per la prossima giornata, o chiedi al '
+            'proprietario della lega di includere delle partite.',
       );
     }
 
@@ -225,7 +258,7 @@ class _SchedinaTab extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Giornata ${matchdayAsync.value?.number ?? ''}',
+              Text('Giornata ${matchdayAsync.valueOrNull?.number ?? ''}',
                   style: Theme.of(context).textTheme.titleMedium),
               Text(
                 '${schedina.completedCount}/${matches.length} completati',
@@ -281,5 +314,283 @@ class _SchedinaTab extends ConsumerWidget {
         ),
       ],
     );
+  }
+}
+
+/// Pannello di gestione della lega, visibile solo al proprietario: punteggi
+/// personalizzati, quali partite della giornata corrente contano per questa
+/// lega, e rimozione membri. Ispirato agli strumenti di gestione lega di
+/// totoamici.net.
+class _GestioneTab extends ConsumerWidget {
+  const _GestioneTab({required this.league});
+
+  final League league;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+          TotoSpace.lg, TotoSpace.md, TotoSpace.lg, TotoSpace.navClearance),
+      children: [
+        Text('Punteggi', style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: TotoSpace.sm),
+        _ScoringConfigCard(league: league),
+        const SizedBox(height: TotoSpace.lg),
+        Text('Partite di questa giornata',
+            style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: TotoSpace.sm),
+        _MatchdaySelectionCard(leagueId: league.id),
+        const SizedBox(height: TotoSpace.lg),
+        Text('Membri', style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: TotoSpace.sm),
+        _MemberManagementList(leagueId: league.id),
+      ],
+    );
+  }
+}
+
+class _ScoringConfigCard extends ConsumerStatefulWidget {
+  const _ScoringConfigCard({required this.league});
+
+  final League league;
+
+  @override
+  ConsumerState<_ScoringConfigCard> createState() => _ScoringConfigCardState();
+}
+
+class _ScoringConfigCardState extends ConsumerState<_ScoringConfigCard> {
+  late ScoringConfig _config;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _config = widget.league.scoringConfig ?? const ScoringConfig();
+  }
+
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    try {
+      await ref
+          .read(leagueRepositoryProvider)
+          .updateScoringConfig(widget.league.id, _config);
+      ref.invalidate(leagueByIdProvider(widget.league.id));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Punteggi aggiornati.')));
+      }
+    } catch (error) {
+      if (mounted) showFailureSnackBar(context, error);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TotoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ScoringStepper(
+            label: 'Risultato esatto',
+            value: _config.exactScorePoints,
+            onChanged: (v) =>
+                setState(() => _config = _config.copyWith(exactScorePoints: v)),
+          ),
+          _ScoringStepper(
+            label: '1X2',
+            value: _config.resultPoints,
+            onChanged: (v) =>
+                setState(() => _config = _config.copyWith(resultPoints: v)),
+          ),
+          _ScoringStepper(
+            label: 'Gol/No Gol',
+            value: _config.goalNoGoalPoints,
+            onChanged: (v) =>
+                setState(() => _config = _config.copyWith(goalNoGoalPoints: v)),
+          ),
+          _ScoringStepper(
+            label: 'Under/Over 2.5',
+            value: _config.overUnderPoints,
+            onChanged: (v) =>
+                setState(() => _config = _config.copyWith(overUnderPoints: v)),
+          ),
+          const SizedBox(height: TotoSpace.sm),
+          FilledButton(
+            onPressed: _isSaving ? null : _save,
+            child: _isSaving
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Salva punteggi'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScoringStepper extends StatelessWidget {
+  const _ScoringStepper(
+      {required this.label, required this.value, required this.onChanged});
+
+  final String label;
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: TotoSpace.xxs),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyMedium)),
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline_rounded),
+            onPressed: value > 0 ? () => onChanged(value - 1) : null,
+          ),
+          SizedBox(
+            width: 28,
+            child: Text('$value',
+                textAlign: TextAlign.center,
+                style: TotoType.number(16, display: false)),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline_rounded),
+            onPressed: () => onChanged(value + 1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MatchdaySelectionCard extends ConsumerWidget {
+  const _MatchdaySelectionCard({required this.leagueId});
+
+  final String leagueId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final matchdayAsync = ref.watch(currentMatchdayProvider);
+    final matchesAsync = ref.watch(currentMatchdayMatchesProvider);
+
+    if (matchdayAsync.isLoading || matchesAsync.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final matchday = matchdayAsync.valueOrNull;
+    final matches = matchesAsync.valueOrNull;
+    if (matchday == null || matches == null || matches.isEmpty) {
+      return const TotoCard(child: Text('Nessuna partita in programma.'));
+    }
+
+    final key = (leagueId: leagueId, matchdayId: matchday.id);
+    final configAsync = ref.watch(leagueMatchdayConfigProvider(key));
+    final excluded =
+        configAsync.valueOrNull?.excludedMatchIds.toSet() ?? const <String>{};
+
+    Future<void> toggle(String matchId, bool include) async {
+      final newExcluded = {...excluded};
+      if (include) {
+        newExcluded.remove(matchId);
+      } else {
+        newExcluded.add(matchId);
+      }
+      try {
+        await ref
+            .read(leagueRepositoryProvider)
+            .setExcludedMatches(leagueId, matchday.id, newExcluded.toList());
+      } catch (error) {
+        if (context.mounted) showFailureSnackBar(context, error);
+      }
+    }
+
+    return TotoCard(
+      child: Column(
+        children: [
+          for (final match in matches)
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('${match.homeTeam.shortName} - ${match.awayTeam.shortName}',
+                  style: Theme.of(context).textTheme.bodyMedium),
+              value: !excluded.contains(match.id),
+              onChanged: (include) => toggle(match.id, include),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MemberManagementList extends ConsumerWidget {
+  const _MemberManagementList({required this.leagueId});
+
+  final String leagueId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final membersAsync = ref.watch(leagueMembersProvider(leagueId));
+    final currentUserId = ref.watch(currentUserProvider).valueOrNull?.id;
+
+    return membersAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => const Text('Non è stato possibile caricare i membri.'),
+      data: (members) => Column(
+        children: [
+          for (final member in members)
+            Padding(
+              padding: const EdgeInsets.only(bottom: TotoSpace.sm),
+              child: TotoCard(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text('@${member.username}',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                    ),
+                    if (member.role == LeagueMemberRole.owner)
+                      const TotoBadge('Proprietario', uppercase: false)
+                    else if (member.userId != currentUserId)
+                      IconButton(
+                        icon: const Icon(Icons.person_remove_outlined),
+                        tooltip: 'Rimuovi dalla lega',
+                        onPressed: () => _confirmRemove(context, ref, member),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmRemove(
+      BuildContext context, WidgetRef ref, LeagueMember member) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rimuovere il membro?'),
+        content: Text('@${member.username} non farà più parte di questa lega.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Annulla')),
+          FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Rimuovi')),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ref
+          .read(leagueRepositoryProvider)
+          .removeMember(leagueId, member.userId);
+    } catch (error) {
+      if (context.mounted) showFailureSnackBar(context, error);
+    }
   }
 }

@@ -3,19 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/competition.dart';
 import '../models/match.dart';
 import '../models/matchday.dart';
+import '../models/team.dart';
+import '../services/firestore_football_data_service.dart';
 import '../services/football_data_service.dart';
-import '../services/mock_football_data_service.dart';
 
 /// Unico punto in cui l'app sceglie l'implementazione concreta di
-/// [FootballDataService]. Integrazione api-football disattivata per ora
-/// (su richiesta esplicita): si torna a [MockFootballDataService], dati
-/// demo sempre disponibili senza dipendenze esterne. Il resto dello stack
-/// (ApiFootballDataService + cf-worker/, FirestoreFootballDataService +
-/// functions/) resta nel repo, inattivo, pronto a essere riattivato
-/// cambiando solo questa riga.
+/// [FootballDataService]. Ora legge da Firestore ([FirestoreFootballDataService]):
+/// i dati sono scritti da un admin globale (vedi feature `admin`) invece
+/// che sincronizzati da api-football (disattivo, piano Spark). Il resto
+/// dello stack (ApiFootballDataService + cf-worker/, MockFootballDataService)
+/// resta nel repo, inattivo, pronto a essere riattivato cambiando solo
+/// questa riga.
 final Provider<FootballDataService> footballDataServiceProvider =
     Provider<FootballDataService>(
-  (ref) => MockFootballDataService(),
+  (ref) => FirestoreFootballDataService(),
 );
 
 final FutureProvider<List<Competition>> competitionsProvider =
@@ -63,3 +64,22 @@ final FutureProviderFamily<Match?, String> matchByIdProvider =
     FutureProvider.family<Match?, String>(
   (ref, matchId) => ref.watch(footballDataServiceProvider).getMatch(matchId),
 );
+
+final FutureProvider<List<Team>> teamsProvider =
+    FutureProvider<List<Team>>((ref) async {
+  final competition = await ref.watch(activeCompetitionProvider.future);
+  return ref
+      .watch(footballDataServiceProvider)
+      .getTeams(competitionId: competition.id);
+});
+
+/// Partite di una giornata specifica (non necessariamente quella corrente):
+/// usato dal pannello admin per gestire anche giornate future/passate.
+final FutureProviderFamily<List<Match>, String> matchesForMatchdayProvider =
+    FutureProvider.family<List<Match>, String>((ref, matchdayId) async {
+  final competition = await ref.watch(activeCompetitionProvider.future);
+  final matches = await ref
+      .watch(footballDataServiceProvider)
+      .getMatches(competitionId: competition.id, matchdayId: matchdayId);
+  return matches..sort((a, b) => a.kickoff.compareTo(b.kickoff));
+});

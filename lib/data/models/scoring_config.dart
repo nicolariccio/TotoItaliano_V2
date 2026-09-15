@@ -16,4 +16,31 @@ abstract class ScoringConfig with _$ScoringConfig {
     // mercati indipendenti nella UI, quindi vengono valutati indipendentemente.
     @Default(3) int overUnderPoints,
   }) = _ScoringConfig;
+
+  const ScoringConfig._();
+
+  /// Serializzazione manuale (nessun json_serializable in questo progetto):
+  /// usata per salvare la configurazione punteggi personalizzata di una
+  /// lega dentro il documento `leagues/{leagueId}.scoringConfig`.
+  Map<String, dynamic> toMap() => {
+        'exactScorePoints': exactScorePoints,
+        'resultPoints': resultPoints,
+        'goalNoGoalPoints': goalNoGoalPoints,
+        'overUnderPoints': overUnderPoints,
+      };
+
+  static ScoringConfig? fromMap(Map<String, dynamic>? map) {
+    if (map == null) return null;
+    const fallback = ScoringConfig();
+    return ScoringConfig(
+      exactScorePoints:
+          (map['exactScorePoints'] as num?)?.toInt() ?? fallback.exactScorePoints,
+      resultPoints:
+          (map['resultPoints'] as num?)?.toInt() ?? fallback.resultPoints,
+      goalNoGoalPoints: (map['goalNoGoalPoints'] as num?)?.toInt() ??
+          fallback.goalNoGoalPoints,
+      overUnderPoints:
+          (map['overUnderPoints'] as num?)?.toInt() ?? fallback.overUnderPoints,
+    );
+  }
 }

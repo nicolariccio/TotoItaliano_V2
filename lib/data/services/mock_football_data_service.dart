@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 
+import '../constants/serie_a_teams.dart';
 import '../models/competition.dart';
 import '../models/match.dart';
 import '../models/matchday.dart';
@@ -118,41 +119,7 @@ class MockFootballDataService implements FootballDataService {
     ]);
   }
 
-  List<Team> _buildTeams() {
-    const raw = [
-      ('Inter', 'INT', 'Milano', 'Stadio Giuseppe Meazza'),
-      ('Milan', 'MIL', 'Milano', 'Stadio Giuseppe Meazza'),
-      ('Juventus', 'JUV', 'Torino', 'Allianz Stadium'),
-      ('Napoli', 'NAP', 'Napoli', 'Stadio Diego Armando Maradona'),
-      ('Roma', 'ROM', 'Roma', 'Stadio Olimpico'),
-      ('Lazio', 'LAZ', 'Roma', 'Stadio Olimpico'),
-      ('Atalanta', 'ATA', 'Bergamo', 'Gewiss Stadium'),
-      ('Fiorentina', 'FIO', 'Firenze', 'Stadio Artemio Franchi'),
-      ('Bologna', 'BOL', 'Bologna', "Stadio Renato Dall'Ara"),
-      ('Torino', 'TOR', 'Torino', 'Stadio Olimpico Grande Torino'),
-      ('Udinese', 'UDI', 'Udine', 'Bluenergy Stadium'),
-      ('Sassuolo', 'SAS', 'Sassuolo', 'Mapei Stadium'),
-      ('Empoli', 'EMP', 'Empoli', 'Stadio Carlo Castellani'),
-      ('Salernitana', 'SAL', 'Salerno', 'Stadio Arechi'),
-      ('Genoa', 'GEN', 'Genova', 'Stadio Luigi Ferraris'),
-      ('Cagliari', 'CAG', 'Cagliari', 'Unipol Domus'),
-      ('Hellas Verona', 'VER', 'Verona', 'Stadio Marcantonio Bentegodi'),
-      ('Lecce', 'LEC', 'Lecce', 'Stadio Via del Mare'),
-      ('Parma', 'PAR', 'Parma', 'Stadio Ennio Tardini'),
-      ('Monza', 'MON', 'Monza', 'U-Power Stadium'),
-    ];
-
-    return [
-      for (var i = 0; i < raw.length; i++)
-        Team(
-          id: 't${i + 1}',
-          name: raw[i].$1,
-          shortName: raw[i].$2,
-          city: raw[i].$3,
-          stadium: raw[i].$4,
-        ),
-    ];
-  }
+  List<Team> _buildTeams() => serieATeams;
 
   Competition _buildCompetition() {
     final now = DateTime.now();

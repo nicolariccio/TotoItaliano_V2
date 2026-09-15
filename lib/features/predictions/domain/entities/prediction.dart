@@ -32,6 +32,13 @@ abstract class Prediction with _$Prediction {
     // Valorizzati solo se market == exactScore.
     int? exactHomeScore,
     int? exactAwayScore,
+    // Valorizzati solo dopo che un admin ha inserito il risultato ufficiale
+    // e il ricalcolo (vedi AdminRepository.recomputeForMatch) è passato su
+    // questo pronostico: null = partita non ancora segnata. Mai scrivibili
+    // dal proprietario del pronostico (solo da un admin globale, vedi
+    // firestore.rules).
+    int? pointsAwarded,
+    bool? correct,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _Prediction;

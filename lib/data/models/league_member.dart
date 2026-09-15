@@ -20,5 +20,14 @@ abstract class LeagueMember with _$LeagueMember {
     required DateTime joinedAt,
     @Default(LeagueMemberRole.member) LeagueMemberRole role,
     @Default(0) int totalPoints,
+    // Esito (corretto/sbagliato) degli ultimi pronostici segnati, più
+    // recente per primo, al massimo 5 — quanto basta per la striscia
+    // "ultimi 5" in classifica. Denormalizzato qui (non ricavato da una
+    // query su `predictions`) perché le Security Rules non permettono a un
+    // membro di leggere i pronostici di un altro: solo il riepilogo
+    // aggregato è pubblico, non le scelte partita per partita altrui.
+    @Default(<bool>[]) List<bool> last5,
+    // Conteggio pronostici a risultato esatto indovinati in questa lega.
+    @Default(0) int exactCount,
   }) = _LeagueMember;
 }

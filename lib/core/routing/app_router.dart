@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/presentation/screens/admin_home_screen.dart';
+import '../../features/admin/presentation/screens/admin_matchday_screen.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/presentation/providers/current_user_provider.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
@@ -156,6 +158,18 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'history',
                     builder: (context, state) =>
                         const PredictionHistoryScreen()),
+                GoRoute(
+                  path: 'admin',
+                  builder: (context, state) => const AdminHomeScreen(),
+                  routes: [
+                    GoRoute(
+                      path: RoutePaths.adminMatchday,
+                      builder: (context, state) => AdminMatchdayScreen(
+                        matchdayId: state.pathParameters['matchdayId']!,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ]),

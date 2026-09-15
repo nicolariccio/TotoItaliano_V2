@@ -28,6 +28,11 @@ class NotAuthenticatedFailure extends Failure {
       [super.message = 'Devi effettuare l\'accesso per continuare.']);
 }
 
+class NotAuthorizedFailure extends Failure {
+  const NotAuthorizedFailure(
+      [super.message = 'Non hai i permessi per questa operazione.']);
+}
+
 class PredictionLockedFailure extends Failure {
   const PredictionLockedFailure(
       [super.message = 'I pronostici per questa partita sono chiusi.']);

@@ -25,4 +25,9 @@ class RoutePaths {
 
   static const String settings = '/profile/settings';
   static const String predictionHistory = '/profile/history';
+
+  static const String admin = '/profile/admin';
+  static const String adminMatchday = 'matchday/:matchdayId';
+  static String adminMatchdayPath(String matchdayId) =>
+      '/profile/admin/matchday/$matchdayId';
 }

@@ -95,9 +95,40 @@ class _RankedRow extends StatelessWidget {
           ),
           const SizedBox(width: TotoSpace.md),
           Expanded(
-            child: Text('@${entry.username}',
-                style: theme.textTheme.labelLarge,
-                overflow: TextOverflow.ellipsis),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('@${entry.username}',
+                    style: theme.textTheme.labelLarge,
+                    overflow: TextOverflow.ellipsis),
+                if (entry.last5.isNotEmpty || entry.exactCount > 0) ...[
+                  const SizedBox(height: TotoSpace.xxs),
+                  Row(
+                    children: [
+                      for (final correct in entry.last5)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 3),
+                          child: Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: correct ? c.success : c.danger,
+                            ),
+                          ),
+                        ),
+                      if (entry.exactCount > 0) ...[
+                        if (entry.last5.isNotEmpty)
+                          const SizedBox(width: TotoSpace.xs),
+                        Text('${entry.exactCount} esatti',
+                            style: theme.textTheme.labelSmall
+                                ?.copyWith(color: c.textTertiary)),
+                      ],
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
           Text('${entry.points} pt',
               style:

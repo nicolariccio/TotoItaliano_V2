@@ -6,6 +6,7 @@ import '../../../../core/routing/route_paths.dart';
 import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../../core/widgets/toto_widgets.dart';
+import '../../../admin/presentation/providers/admin_providers.dart';
 import '../../../auth/domain/entities/app_user.dart';
 import '../../../auth/presentation/providers/auth_repository_provider.dart';
 import '../../../auth/presentation/providers/current_user_provider.dart';
@@ -53,6 +54,7 @@ class _ProfileContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final c = context.c;
+    final isGlobalAdmin = ref.watch(isGlobalAdminProvider);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -125,6 +127,22 @@ class _ProfileContent extends ConsumerWidget {
             ],
           ),
         ),
+        if (isGlobalAdmin) ...[
+          const SizedBox(height: TotoSpace.md),
+          TotoCard(
+            onTap: () => context.push(RoutePaths.admin),
+            child: Row(
+              children: [
+                Icon(Icons.admin_panel_settings_outlined, color: c.brand),
+                const SizedBox(width: TotoSpace.md),
+                Expanded(
+                    child:
+                        Text('Gestione admin', style: theme.textTheme.titleSmall)),
+                Icon(Icons.chevron_right_rounded, color: c.textTertiary),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: TotoSpace.x3l),
         OutlinedButton.icon(
           onPressed: () => ref.read(authRepositoryProvider).signOut(),

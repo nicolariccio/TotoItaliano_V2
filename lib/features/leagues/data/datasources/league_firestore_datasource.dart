@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/constants/firestore_paths.dart';
 import '../../../../data/models/league.dart';
+import '../../../../data/models/league_matchday_config.dart';
 import '../../../../data/models/league_member.dart';
+import '../../../../data/models/scoring_config.dart';
 
 class LeagueFirestoreDatasource {
   LeagueFirestoreDatasource(this._firestore);
@@ -16,6 +18,12 @@ class LeagueFirestoreDatasource {
       _leagues
           .doc(leagueId)
           .collection(FirestorePaths.leagueMembersSubcollection);
+
+  CollectionReference<Map<String, dynamic>> _matchdayConfigs(
+          String leagueId) =>
+      _leagues
+          .doc(leagueId)
+          .collection(FirestorePaths.leagueMatchdayConfigSubcollection);
 
   DocumentReference<Map<String, dynamic>> _userRef(String userId) =>
       _firestore.collection(FirestorePaths.users).doc(userId);
@@ -134,6 +142,47 @@ class LeagueFirestoreDatasource {
     });
   }
 
+  Future<void> updateScoringConfig(String leagueId, ScoringConfig config) {
+    return _leagues.doc(leagueId).update({'scoringConfig': config.toMap()});
+  }
+
+  Stream<LeagueMatchdayConfig> watchMatchdayConfig(
+      String leagueId, String matchdayId) {
+    return _matchdayConfigs(leagueId).doc(matchdayId).snapshots().map((doc) {
+      final data = doc.data();
+      final excluded = (data?['excludedMatchIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const <String>[];
+      return LeagueMatchdayConfig(
+        leagueId: leagueId,
+        matchdayId: matchdayId,
+        excludedMatchIds: excluded,
+      );
+    });
+  }
+
+  Future<void> setExcludedMatches(
+      String leagueId, String matchdayId, List<String> excludedMatchIds) {
+    return _matchdayConfigs(leagueId).doc(matchdayId).set({
+      'leagueId': leagueId,
+      'matchdayId': matchdayId,
+      'excludedMatchIds': excludedMatchIds,
+    });
+  }
+
+  /// Rimuove il membro e decrementa `memberCount`: due scritture separate
+  /// (non una transazione) perché le Security Rules valutano ciascuna con
+  /// un permesso diverso (delete sul membro, update sulla lega) e una
+  /// `runTransaction` le eseguirebbe comunque come scritture indipendenti
+  /// ai fini delle regole — la sequenzialità qui è sufficiente.
+  Future<void> removeMember(String leagueId, String userId) async {
+    await _members(leagueId).doc(userId).delete();
+    await _leagues.doc(leagueId).update({
+      'memberCount': FieldValue.increment(-1),
+    });
+  }
+
   Stream<List<LeagueMember>> watchMembers(String leagueId) {
     return _members(leagueId)
         .orderBy('totalPoints', descending: true)
@@ -171,6 +220,8 @@ class LeagueFirestoreDatasource {
       createdAt: createdAt is Timestamp ? createdAt.toDate() : DateTime.now(),
       isActive: data['isActive'] as bool? ?? true,
       memberCount: (data['memberCount'] as num?)?.toInt() ?? 1,
+      scoringConfig:
+          ScoringConfig.fromMap(data['scoringConfig'] as Map<String, dynamic>?),
     );
   }
 
@@ -187,6 +238,9 @@ class LeagueFirestoreDatasource {
           ? LeagueMemberRole.owner
           : LeagueMemberRole.member,
       totalPoints: (data['totalPoints'] as num?)?.toInt() ?? 0,
+      last5: (data['last5'] as List<dynamic>?)?.map((e) => e as bool).toList() ??
+          const <bool>[],
+      exactCount: (data['exactCount'] as num?)?.toInt() ?? 0,
     );
   }
 }
