@@ -10,6 +10,9 @@ import '../../../admin/presentation/providers/admin_providers.dart';
 import '../../../auth/domain/entities/app_user.dart';
 import '../../../auth/presentation/providers/auth_repository_provider.dart';
 import '../../../auth/presentation/providers/current_user_provider.dart';
+import '../../../predictions/domain/entities/prediction.dart';
+import '../../domain/profile_stats.dart';
+import '../providers/profile_stats_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -19,15 +22,6 @@ class ProfileScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profilo'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push(RoutePaths.settings),
-          ),
-        ],
-      ),
       body: userAsync.when(
         loading: () => const AppLoadingView(),
         error: (error, stackTrace) => AppErrorView(
@@ -38,12 +32,19 @@ class ProfileScreen extends ConsumerWidget {
           if (user == null) {
             return const AppErrorView(message: 'Devi effettuare l\'accesso.');
           }
-          return _ProfileContent(user: user);
+          return SafeArea(child: _ProfileContent(user: user));
         },
       ),
     );
   }
 }
+
+const Map<PredictionMarket, String> _marketLabels = {
+  PredictionMarket.result1x2: '1X2',
+  PredictionMarket.goalNoGoal: 'Gol/NoGol',
+  PredictionMarket.overUnder25: 'Under/Over 2.5',
+  PredictionMarket.exactScore: 'Risultato esatto',
+};
 
 class _ProfileContent extends ConsumerWidget {
   const _ProfileContent({required this.user});
@@ -55,16 +56,30 @@ class _ProfileContent extends ConsumerWidget {
     final theme = Theme.of(context);
     final c = context.c;
     final isGlobalAdmin = ref.watch(isGlobalAdminProvider);
+    final statsAsync = ref.watch(profileStatsProvider);
+    final stats = statsAsync.valueOrNull ?? const ProfileStats(
+      bestMatchdayPoints: 0,
+      currentStreak: 0,
+      accuracyByMarket: {},
+      recentMatchdays: [],
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
           TotoSpace.lg, TotoSpace.lg, TotoSpace.lg, TotoSpace.navClearance),
       children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push(RoutePaths.settings),
+          ),
+        ),
         Center(
           child: Column(
             children: [
               CircleAvatar(
-                radius: 40,
+                radius: 36,
                 backgroundColor: c.brandFill,
                 backgroundImage:
                     user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
@@ -73,14 +88,16 @@ class _ProfileContent extends ConsumerWidget {
                         user.username.isNotEmpty
                             ? user.username[0].toUpperCase()
                             : '?',
-                        style: theme.textTheme.displaySmall
+                        style: theme.textTheme.headlineMedium
                             ?.copyWith(color: c.textOnPrimary),
                       )
                     : null,
               ),
               const SizedBox(height: TotoSpace.md),
-              Text('@${user.username}', style: theme.textTheme.titleLarge),
-              Text(user.fullName, style: theme.textTheme.bodyMedium),
+              Text('@${user.username}', style: theme.textTheme.headlineMedium),
+              const SizedBox(height: TotoSpace.xxs),
+              Text('${user.totalPoints} punti totali',
+                  style: theme.textTheme.bodyMedium),
             ],
           ),
         ),
@@ -93,61 +110,124 @@ class _ProfileContent extends ConsumerWidget {
           crossAxisSpacing: TotoSpace.md,
           childAspectRatio: 1.7,
           children: [
-            _StatTile(label: 'Punti', value: '${user.totalPoints}'),
             _StatTile(label: 'Pronostici', value: '${user.predictionsCount}'),
             _StatTile(
-                label: 'Esatti', value: '${user.exactPredictions}', gold: true),
+                label: 'Precisione',
+                value: '${(user.successRate * 100).round()}%'),
             _StatTile(
-                label: 'Successo',
-                value: '${(user.successRate * 100).toStringAsFixed(0)}%'),
+                label: 'Miglior giornata',
+                value: '${stats.bestMatchdayPoints}'),
+            _StatTile(
+                label: 'Serie in corso',
+                value: '${stats.currentStreak}',
+                color: c.success),
           ],
         ),
-        const SizedBox(height: TotoSpace.md),
-        TotoCard(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Codice referral', style: theme.textTheme.bodyMedium),
-              Text(user.referralCode,
-                  style: TotoType.number(18, display: false, color: c.brand)),
-            ],
-          ),
-        ),
-        const SizedBox(height: TotoSpace.md),
-        TotoCard(
-          onTap: () => context.push(RoutePaths.predictionHistory),
-          child: Row(
-            children: [
-              Icon(Icons.history_rounded, color: c.brand),
-              const SizedBox(width: TotoSpace.md),
-              Expanded(
-                  child: Text('I miei pronostici',
-                      style: theme.textTheme.titleSmall)),
-              Icon(Icons.chevron_right_rounded, color: c.textTertiary),
-            ],
-          ),
-        ),
-        if (isGlobalAdmin) ...[
-          const SizedBox(height: TotoSpace.md),
-          TotoCard(
-            onTap: () => context.push(RoutePaths.admin),
-            child: Row(
-              children: [
-                Icon(Icons.admin_panel_settings_outlined, color: c.brand),
-                const SizedBox(width: TotoSpace.md),
-                Expanded(
-                    child:
-                        Text('Gestione admin', style: theme.textTheme.titleSmall)),
-                Icon(Icons.chevron_right_rounded, color: c.textTertiary),
-              ],
-            ),
-          ),
-        ],
         const SizedBox(height: TotoSpace.x3l),
-        OutlinedButton.icon(
-          onPressed: () => ref.read(authRepositoryProvider).signOut(),
-          icon: Icon(Icons.logout_rounded, color: c.danger),
-          label: Text('Esci', style: TextStyle(color: c.danger)),
+        Text('Precisione per mercato', style: theme.textTheme.titleSmall),
+        const SizedBox(height: TotoSpace.lg),
+        TotoCard(
+          child: Column(
+            children: [
+              for (final market in PredictionMarket.values) ...[
+                TotoAccuracyBar(
+                  label: _marketLabels[market]!,
+                  value: stats.accuracyByMarket[market] ?? 0,
+                  fillColor: market == PredictionMarket.exactScore
+                      ? c.gold
+                      : null,
+                ),
+                if (market != PredictionMarket.values.last)
+                  const SizedBox(height: TotoSpace.lg),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: TotoSpace.x3l),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Storico', style: theme.textTheme.titleSmall),
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                minimumSize: Size.zero,
+                padding: EdgeInsets.zero,
+                foregroundColor: c.brand,
+              ),
+              onPressed: () => context.push(RoutePaths.predictionHistory),
+              child: const Text('Vedi tutto'),
+            ),
+          ],
+        ),
+        const SizedBox(height: TotoSpace.sm),
+        if (stats.recentMatchdays.isEmpty)
+          TotoCard(
+            child: Text('Nessuna giornata segnata ancora.',
+                style: theme.textTheme.bodyMedium),
+          )
+        else
+          for (var i = 0; i < stats.recentMatchdays.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: TotoSpace.sm),
+              child: TotoCard(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                          'Giornata ${stats.recentMatchdays[i].matchday.number}',
+                          style: theme.textTheme.bodyLarge),
+                    ),
+                    TotoBadge.points(stats.recentMatchdays[i].points),
+                  ],
+                ),
+              ),
+            ),
+        const SizedBox(height: TotoSpace.x3l),
+        Text('Impostazioni', style: theme.textTheme.titleSmall),
+        const SizedBox(height: TotoSpace.sm),
+        _SettingsGroup(children: [
+          _SettingsRow(
+            icon: Icons.notifications_outlined,
+            label: 'Notifiche',
+            onTap: () => context.push(RoutePaths.settings),
+          ),
+          _SettingsRow(
+            icon: Icons.person_outline_rounded,
+            label: 'Account e nickname',
+            onTap: () => context.push(RoutePaths.settings),
+          ),
+          _SettingsRow(
+            icon: Icons.rule_rounded,
+            label: 'Regolamento punti',
+            onTap: () => context.push(RoutePaths.settings),
+          ),
+          _SettingsRow(
+            icon: Icons.history_rounded,
+            label: 'I miei pronostici',
+            onTap: () => context.push(RoutePaths.predictionHistory),
+          ),
+          if (isGlobalAdmin)
+            _SettingsRow(
+              icon: Icons.admin_panel_settings_outlined,
+              label: 'Gestione admin',
+              onTap: () => context.push(RoutePaths.admin),
+            ),
+        ]),
+        const SizedBox(height: TotoSpace.x3l),
+        PressScale(
+          onTap: () => ref.read(authRepositoryProvider).signOut(),
+          child: Container(
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: c.surfaceFlat,
+              borderRadius: BorderRadius.circular(TotoRadius.md),
+            ),
+            child: Text('Esci',
+                style:
+                    theme.textTheme.labelLarge?.copyWith(color: c.danger)),
+          ),
         ),
       ],
     );
@@ -155,26 +235,79 @@ class _ProfileContent extends ConsumerWidget {
 }
 
 class _StatTile extends StatelessWidget {
-  const _StatTile(
-      {required this.label, required this.value, this.gold = false});
+  const _StatTile({required this.label, required this.value, this.color});
 
   final String label;
   final String value;
-  final bool gold;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final c = context.c;
     return TotoCard(
+      radius: TotoRadius.lg,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(value,
-              style: TotoType.number(28, color: gold ? c.gold : c.textPrimary)),
+          Text(value, style: TotoType.number(28, color: color ?? c.textPrimary)),
           const SizedBox(height: TotoSpace.xs),
-          Text(label, style: theme.textTheme.bodySmall),
+          Text(label.toUpperCase(), style: theme.textTheme.labelSmall),
         ],
+      ),
+    );
+  }
+}
+
+class _SettingsGroup extends StatelessWidget {
+  const _SettingsGroup({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return TotoCard(
+      radius: TotoRadius.lg,
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i != children.length - 1)
+              Divider(height: 1, indent: 56, color: c.borderSubtle),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  const _SettingsRow(
+      {required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final c = context.c;
+    return PressScale(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: TotoSpace.lg, vertical: TotoSpace.md),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: c.textSecondary),
+            const SizedBox(width: TotoSpace.md),
+            Expanded(child: Text(label, style: theme.textTheme.bodyLarge)),
+            Icon(Icons.chevron_right_rounded, color: c.textTertiary),
+          ],
+        ),
       ),
     );
   }

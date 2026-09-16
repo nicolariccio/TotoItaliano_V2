@@ -26,16 +26,22 @@ enum _LeagueTab { classifica, schedina, gestione }
 /// leghe diverse), quindi il contesto "di quale lega" deve sempre essere
 /// esplicito.
 class LeagueDetailScreen extends ConsumerStatefulWidget {
-  const LeagueDetailScreen({super.key, required this.leagueId});
+  const LeagueDetailScreen({super.key, required this.leagueId, this.initialTab});
 
   final String leagueId;
+
+  /// 'schedina' per aprire direttamente la tab Schedina (es. dalla CTA
+  /// della hero card Home); qualsiasi altro valore o null apre Classifica.
+  final String? initialTab;
 
   @override
   ConsumerState<LeagueDetailScreen> createState() => _LeagueDetailScreenState();
 }
 
 class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
-  _LeagueTab _tab = _LeagueTab.classifica;
+  late _LeagueTab _tab = widget.initialTab == 'schedina'
+      ? _LeagueTab.schedina
+      : _LeagueTab.classifica;
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +163,7 @@ class _ClassificaTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final membersAsync = ref.watch(leagueMembersProvider(leagueId));
+    final currentUserId = ref.watch(currentUserProvider).valueOrNull?.id;
     return membersAsync.when(
       loading: () => const AppLoadingView(),
       error: (error, stackTrace) => AppErrorView(
@@ -165,6 +172,7 @@ class _ClassificaTab extends ConsumerWidget {
       ),
       data: (members) => PodiumLeaderboard(
         emptyTitle: 'Nessun membro ancora',
+        currentUserId: currentUserId,
         entries: [
           for (final member in members)
             RankedEntry(
@@ -181,13 +189,23 @@ class _ClassificaTab extends ConsumerWidget {
   }
 }
 
-class _SchedinaTab extends ConsumerWidget {
+class _SchedinaTab extends ConsumerStatefulWidget {
   const _SchedinaTab({required this.leagueId});
 
   final String leagueId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SchedinaTab> createState() => _SchedinaTabState();
+}
+
+class _SchedinaTabState extends ConsumerState<_SchedinaTab> {
+  // Una sola riga espansa alla volta, come da handoff: aprirne un'altra
+  // richiude la precedente invece di accumulare card aperte in lista.
+  String? _expandedMatchId;
+
+  @override
+  Widget build(BuildContext context) {
+    final leagueId = widget.leagueId;
     final matchdayAsync = ref.watch(currentMatchdayProvider);
     final matchesAsync = ref.watch(currentMatchdayMatchesProvider);
     // Chiave stabile anche prima che la giornata sia caricata: la config
@@ -250,27 +268,34 @@ class _SchedinaTab extends ConsumerWidget {
     final double progress =
         matches.isEmpty ? 0 : schedina.completedCount / matches.length;
 
+    final matchday = matchdayAsync.value!;
+    final deadlinePassed = DateTime.now().isAfter(matchday.predictionDeadline);
+
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              TotoSpace.lg, TotoSpace.md, TotoSpace.lg, TotoSpace.xs),
+        Container(
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: TotoSpace.lg),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: c.borderSubtle)),
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Giornata ${matchdayAsync.valueOrNull?.number ?? ''}',
+              Text('Giornata ${matchday.number}',
                   style: Theme.of(context).textTheme.titleMedium),
-              Text(
-                '${schedina.completedCount}/${matches.length} completati',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              if (!deadlinePassed)
+                TotoCountdown(deadline: matchday.predictionDeadline, size: 15)
+              else
+                TotoBadge.locked(),
             ],
           ),
         ),
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(
-                TotoSpace.lg, TotoSpace.sm, TotoSpace.lg, TotoSpace.sm),
+                TotoSpace.lg, TotoSpace.md, TotoSpace.lg, TotoSpace.sm),
             itemCount: matches.length,
             separatorBuilder: (context, index) =>
                 const SizedBox(height: TotoSpace.sm),
@@ -278,42 +303,77 @@ class _SchedinaTab extends ConsumerWidget {
               final match = matches[index];
               final pick = schedina.picks[match.id] ?? const PickState();
               return SchedinaRow(
-                  match: match, pick: pick, controller: controller);
+                match: match,
+                pick: pick,
+                controller: controller,
+                expanded: _expandedMatchId == match.id,
+                onToggle: () => setState(() {
+                  _expandedMatchId =
+                      _expandedMatchId == match.id ? null : match.id;
+                }),
+              );
             },
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(TotoSpace.lg, TotoSpace.xs,
+          padding: const EdgeInsets.fromLTRB(TotoSpace.lg, TotoSpace.md,
               TotoSpace.lg, TotoSpace.navClearance),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    deadlinePassed
+                        ? '${schedina.completedCount} di ${matches.length}'
+                        : '${schedina.completedCount} di ${matches.length} · '
+                            'chiude fra ${_untilClose(matchday.predictionDeadline)}',
+                    style: TotoType.number(13, display: false,
+                        color: c.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: TotoSpace.sm),
               ClipRRect(
                 borderRadius: BorderRadius.circular(TotoRadius.full),
                 child: LinearProgressIndicator(
                   value: progress,
-                  minHeight: 6,
+                  minHeight: 4,
                   backgroundColor: c.neutralContainer,
                   color: c.brand,
                 ),
               ),
               const SizedBox(height: TotoSpace.md),
-              FilledButton(
-                onPressed: canSave ? () => controller.save(matches) : null,
-                child: schedina.isSaving
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: c.textOnPrimary),
-                      )
-                    : const Text('Salva schedina'),
+              SizedBox(
+                height: 44,
+                child: FilledButton(
+                  onPressed: canSave ? () => controller.save(matches) : null,
+                  child: schedina.isSaving
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: c.textOnPrimary),
+                        )
+                      : const Text('Conferma'),
+                ),
               ),
             ],
           ),
         ),
       ],
     );
+  }
+
+  /// Es. "2h 47m" — usato nella barra persistente sopra la bottom nav,
+  /// più compatto del countdown a cifre della testata.
+  String _untilClose(DateTime deadline) {
+    final left = deadline.difference(DateTime.now());
+    if (left.isNegative) return '0m';
+    final hours = left.inHours;
+    final minutes = left.inMinutes.remainder(60);
+    return hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
   }
 }
 

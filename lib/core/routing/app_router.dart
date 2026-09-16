@@ -141,6 +141,7 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
                   path: RoutePaths.leagueDetail,
                   builder: (context, state) => LeagueDetailScreen(
                     leagueId: state.pathParameters['leagueId']!,
+                    initialTab: state.extra as String?,
                   ),
                 ),
               ],

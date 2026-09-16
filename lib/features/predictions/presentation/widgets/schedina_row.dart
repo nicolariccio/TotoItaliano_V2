@@ -8,16 +8,25 @@ import '../../domain/entities/prediction.dart';
 import '../controllers/schedina_controller.dart';
 import '../controllers/schedina_state.dart';
 
+/// Riga di una partita nella schedina: collassata mostra solo nome/orario
+/// e l'esito del pronostico (pill blu "scelto" o pill tratteggiata
+/// "scegli"); espansa (una alla volta, vedi [_SchedinaTab]) mostra il
+/// selettore di mercato e i valori.
 class SchedinaRow extends StatelessWidget {
-  const SchedinaRow(
-      {super.key,
-      required this.match,
-      required this.pick,
-      required this.controller});
+  const SchedinaRow({
+    super.key,
+    required this.match,
+    required this.pick,
+    required this.controller,
+    required this.expanded,
+    required this.onToggle,
+  });
 
   final Match match;
   final PickState pick;
   final SchedinaController controller;
+  final bool expanded;
+  final VoidCallback onToggle;
 
   static const _markets = [
     PredictionMarket.result1x2,
@@ -28,8 +37,8 @@ class SchedinaRow extends StatelessWidget {
 
   static const _marketLabels = {
     PredictionMarket.result1x2: '1X2',
-    PredictionMarket.goalNoGoal: 'Gol/No',
-    PredictionMarket.overUnder25: 'U/O 2.5',
+    PredictionMarket.goalNoGoal: 'Gol-NoGol',
+    PredictionMarket.overUnder25: 'U-O 2.5',
     PredictionMarket.exactScore: 'Esatto',
   };
 
@@ -38,29 +47,77 @@ class SchedinaRow extends StatelessWidget {
     final theme = Theme.of(context);
     final c = context.c;
     final bool enabled = match.isPredictionOpen;
+    final bool done = pick.isComplete;
+    final subtitle =
+        '${DateFormatter.matchKickoffCompact(match.kickoff)} · ${match.homeTeam.stadium}';
+
+    if (!expanded) {
+      return Opacity(
+        opacity: enabled ? 1 : 0.6,
+        child: TotoCard(
+          radius: TotoRadius.md,
+          padding: const EdgeInsets.symmetric(
+              horizontal: TotoSpace.lg, vertical: TotoSpace.md),
+          onTap: enabled ? onToggle : null,
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${match.homeTeam.shortName} - ${match.awayTeam.shortName}',
+                      style: theme.textTheme.titleMedium,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: TotoSpace.xxs),
+                    Text(subtitle, style: theme.textTheme.bodySmall),
+                  ],
+                ),
+              ),
+              const SizedBox(width: TotoSpace.sm),
+              if (!enabled)
+                Icon(Icons.lock_outline_rounded, size: 16, color: c.textTertiary)
+              else if (done)
+                const TotoBadge('Scelto',
+                    tone: TotoBadgeTone.brand,
+                    icon: Icons.check_rounded,
+                    uppercase: false)
+              else
+                const TotoDashedChip('Scegli'),
+            ],
+          ),
+        ),
+      );
+    }
 
     return TotoCard(
+      level: TotoCardLevel.elevated,
+      radius: TotoRadius.lg,
+      onTap: onToggle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
                   '${match.homeTeam.shortName} - ${match.awayTeam.shortName}',
-                  style: theme.textTheme.titleSmall,
+                  style: theme.textTheme.titleMedium,
                 ),
               ),
-              Text(DateFormatter.matchKickoff(match.kickoff),
-                  style: theme.textTheme.bodySmall),
-              if (!enabled) ...[
-                const SizedBox(width: TotoSpace.sm),
-                Icon(Icons.lock_outline_rounded,
-                    size: 16, color: c.textTertiary),
-              ],
+              done
+                  ? const TotoBadge('Scelto',
+                      tone: TotoBadgeTone.brand,
+                      icon: Icons.check_rounded,
+                      uppercase: false)
+                  : const TotoBadge('Da scegliere', tone: TotoBadgeTone.warning),
             ],
           ),
-          const SizedBox(height: TotoSpace.md),
+          const SizedBox(height: TotoSpace.xxs),
+          Text(subtitle, style: theme.textTheme.bodySmall),
+          const SizedBox(height: TotoSpace.lg),
           Opacity(
             opacity: enabled ? 1 : 0.5,
             child: IgnorePointer(
@@ -105,25 +162,31 @@ class _ValuePicker extends StatelessWidget {
       case PredictionMarket.result1x2:
         return Row(
           children: [
-            TotoValueChip(
-              label: '1',
-              selected: pick.result1x2Value == '1',
-              enabled: enabled,
-              onTap: () => controller.setResult1x2(match.id, '1'),
+            Expanded(
+              child: TotoValueChip(
+                label: '1',
+                selected: pick.result1x2Value == '1',
+                enabled: enabled,
+                onTap: () => controller.setResult1x2(match.id, '1'),
+              ),
             ),
             const SizedBox(width: TotoSpace.sm),
-            TotoValueChip(
-              label: 'X',
-              selected: pick.result1x2Value == 'X',
-              enabled: enabled,
-              onTap: () => controller.setResult1x2(match.id, 'X'),
+            Expanded(
+              child: TotoValueChip(
+                label: 'X',
+                selected: pick.result1x2Value == 'X',
+                enabled: enabled,
+                onTap: () => controller.setResult1x2(match.id, 'X'),
+              ),
             ),
             const SizedBox(width: TotoSpace.sm),
-            TotoValueChip(
-              label: '2',
-              selected: pick.result1x2Value == '2',
-              enabled: enabled,
-              onTap: () => controller.setResult1x2(match.id, '2'),
+            Expanded(
+              child: TotoValueChip(
+                label: '2',
+                selected: pick.result1x2Value == '2',
+                enabled: enabled,
+                onTap: () => controller.setResult1x2(match.id, '2'),
+              ),
             ),
           ],
         );
@@ -131,18 +194,22 @@ class _ValuePicker extends StatelessWidget {
       case PredictionMarket.goalNoGoal:
         return Row(
           children: [
-            TotoValueChip(
-              label: 'Gol',
-              selected: pick.goalNoGoalValue == true,
-              enabled: enabled,
-              onTap: () => controller.setGoalNoGoal(match.id, true),
+            Expanded(
+              child: TotoValueChip(
+                label: 'Gol',
+                selected: pick.goalNoGoalValue == true,
+                enabled: enabled,
+                onTap: () => controller.setGoalNoGoal(match.id, true),
+              ),
             ),
             const SizedBox(width: TotoSpace.sm),
-            TotoValueChip(
-              label: 'No Gol',
-              selected: pick.goalNoGoalValue == false,
-              enabled: enabled,
-              onTap: () => controller.setGoalNoGoal(match.id, false),
+            Expanded(
+              child: TotoValueChip(
+                label: 'No Gol',
+                selected: pick.goalNoGoalValue == false,
+                enabled: enabled,
+                onTap: () => controller.setGoalNoGoal(match.id, false),
+              ),
             ),
           ],
         );
@@ -150,18 +217,22 @@ class _ValuePicker extends StatelessWidget {
       case PredictionMarket.overUnder25:
         return Row(
           children: [
-            TotoValueChip(
-              label: 'Over 2.5',
-              selected: pick.overUnder25Value == true,
-              enabled: enabled,
-              onTap: () => controller.setOverUnder25(match.id, true),
+            Expanded(
+              child: TotoValueChip(
+                label: 'Over 2.5',
+                selected: pick.overUnder25Value == true,
+                enabled: enabled,
+                onTap: () => controller.setOverUnder25(match.id, true),
+              ),
             ),
             const SizedBox(width: TotoSpace.sm),
-            TotoValueChip(
-              label: 'Under 2.5',
-              selected: pick.overUnder25Value == false,
-              enabled: enabled,
-              onTap: () => controller.setOverUnder25(match.id, false),
+            Expanded(
+              child: TotoValueChip(
+                label: 'Under 2.5',
+                selected: pick.overUnder25Value == false,
+                enabled: enabled,
+                onTap: () => controller.setOverUnder25(match.id, false),
+              ),
             ),
           ],
         );

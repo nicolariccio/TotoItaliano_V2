@@ -37,10 +37,26 @@ class DateFormatter {
     return '$weekday ${dateTime.day} $month, $hour:$minute';
   }
 
+  /// Es. "Sab 18:00" — usata nelle righe partita compatte (Home, Schedina),
+  /// dove la data completa di [matchKickoff] occuperebbe troppo spazio.
+  static String matchKickoffCompact(DateTime dateTime) {
+    final weekday = _weekdays[dateTime.weekday - 1];
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$weekday $hour:$minute';
+  }
+
   /// Es. "20/09/2026".
   static String shortDate(DateTime dateTime) {
     final day = dateTime.day.toString().padLeft(2, '0');
     final month = dateTime.month.toString().padLeft(2, '0');
     return '$day/$month/${dateTime.year}';
+  }
+
+  /// Es. "18:00" — solo l'ora, per label compatte tipo "chiude 18:00".
+  static String hm(DateTime dateTime) {
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 }
