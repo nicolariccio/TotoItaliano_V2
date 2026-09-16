@@ -62,17 +62,21 @@ class PodiumLeaderboard extends StatelessWidget {
             ),
             if (rest.isNotEmpty) const SizedBox(height: TotoSpace.x3l),
             for (var i = 0; i < rest.length; i++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: TotoSpace.sm),
-                child: FadeSlideIn(
-                  delay: Duration(milliseconds: 40 * i.clamp(0, 10)),
-                  child: _RankedRow(
-                    position: i + 4,
-                    entry: rest[i],
-                    highlighted: rest[i].id == currentUserId,
+              // La riga dell'utente è già fissata sopra la bottom nav
+              // (vedi pinnedMe sotto): non ripeterla anche qui, o compare
+              // due volte non appena esce dal podio.
+              if (pinnedMe == null || rest[i].id != currentUserId)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: TotoSpace.sm),
+                  child: FadeSlideIn(
+                    delay: Duration(milliseconds: 40 * i.clamp(0, 10)),
+                    child: _RankedRow(
+                      position: i + 4,
+                      entry: rest[i],
+                      highlighted: rest[i].id == currentUserId,
+                    ),
                   ),
                 ),
-              ),
           ],
         ),
         if (pinnedMe != null)

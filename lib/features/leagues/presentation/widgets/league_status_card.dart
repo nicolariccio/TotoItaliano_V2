@@ -91,7 +91,7 @@ class LeagueStatusCard extends ConsumerWidget {
                               tone: TotoBadgeTone.brand,
                               icon: Icons.check_rounded)
                           : TotoBadge(
-                              '$incomplete partite mancanti',
+                              '$incomplete mancanti',
                               tone: TotoBadgeTone.warning,
                               icon: Icons.schedule_rounded,
                             ),
