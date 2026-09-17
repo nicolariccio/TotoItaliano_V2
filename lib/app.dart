@@ -17,7 +17,7 @@ class TotoItalianoApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: TotoTheme.light(),
       darkTheme: TotoTheme.dark(),
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.system,
       routerConfig: router,
     );
   }
