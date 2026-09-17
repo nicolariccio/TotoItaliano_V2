@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/providers/theme_mode_provider.dart';
 import '../../../../core/routing/route_paths.dart';
 import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/widgets/state_views.dart';
@@ -183,6 +184,22 @@ class _ProfileContent extends ConsumerWidget {
                 ),
               ),
             ),
+        const SizedBox(height: TotoSpace.x3l),
+        Text('Aspetto', style: theme.textTheme.titleSmall),
+        const SizedBox(height: TotoSpace.sm),
+        TotoCard(
+          child: TotoSegmented<ThemeMode>(
+            values: const [ThemeMode.system, ThemeMode.light, ThemeMode.dark],
+            labels: (mode) => switch (mode) {
+              ThemeMode.system => 'Auto',
+              ThemeMode.light => 'Chiaro',
+              ThemeMode.dark => 'Scuro',
+            },
+            selected: ref.watch(themeModeProvider),
+            onChanged: (mode) =>
+                ref.read(themeModeProvider.notifier).setThemeMode(mode),
+          ),
+        ),
         const SizedBox(height: TotoSpace.x3l),
         Text('Impostazioni', style: theme.textTheme.titleSmall),
         const SizedBox(height: TotoSpace.sm),
