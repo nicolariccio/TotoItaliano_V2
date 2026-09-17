@@ -41,41 +41,63 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               onChanged: (s) => setState(() => _scope = s),
             ),
           ),
-          if (_scope == _Scope.lega)
-            SizedBox(
-              height: 40,
-              child: leaguesAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (error, stackTrace) => const SizedBox.shrink(),
-                data: (leagues) {
-                  if (leagues.isEmpty) return const SizedBox.shrink();
-                  _selectedLeagueId ??= leagues.first.id;
-                  return ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: TotoSpace.lg),
-                    itemCount: leagues.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(width: TotoSpace.sm),
-                    itemBuilder: (context, index) {
-                      final league = leagues[index];
-                      final selected = league.id == _selectedLeagueId;
-                      return _LeagueChip(
-                        label: league.name,
-                        selected: selected,
-                        onTap: () => setState(() => _selectedLeagueId = league.id),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          const SizedBox(height: TotoSpace.sm),
           Expanded(
             child: _scope == _Scope.generale
                 ? const _GeneraleBody()
-                : (_selectedLeagueId == null
-                    ? const AppLoadingView()
-                    : _LegaBody(leagueId: _selectedLeagueId!)),
+                : leaguesAsync.when(
+                    loading: () => const AppLoadingView(),
+                    error: (error, stackTrace) => AppErrorView(
+                      message: 'Non è stato possibile caricare le tue leghe.',
+                      onRetry: () => ref.invalidate(myLeaguesProvider),
+                    ),
+                    data: (leagues) {
+                      if (leagues.isEmpty) {
+                        return const AppEmptyView(
+                          title: 'Nessuna lega ancora',
+                          subtitle:
+                              'Entra in una lega per vedere la sua classifica.',
+                          icon: Icons.groups_outlined,
+                        );
+                      }
+                      // Se la lega selezionata non è (più) tra le proprie —
+                      // prima apertura, o rimozione da una lega — ricadi
+                      // sulla prima disponibile invece di restare bloccati
+                      // su un id che non esiste più.
+                      if (!leagues.any((l) => l.id == _selectedLeagueId)) {
+                        _selectedLeagueId = leagues.first.id;
+                      }
+                      return Column(
+                        children: [
+                          SizedBox(
+                            height: 40,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: TotoSpace.lg),
+                              itemCount: leagues.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(width: TotoSpace.sm),
+                              itemBuilder: (context, index) {
+                                final league = leagues[index];
+                                final selected =
+                                    league.id == _selectedLeagueId;
+                                return _LeagueChip(
+                                  label: league.name,
+                                  selected: selected,
+                                  onTap: () => setState(
+                                      () => _selectedLeagueId = league.id),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: TotoSpace.sm),
+                          Expanded(
+                            child: _LegaBody(leagueId: _selectedLeagueId!),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
           ),
         ],
       ),

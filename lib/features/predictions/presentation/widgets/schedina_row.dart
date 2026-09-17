@@ -51,6 +51,16 @@ class SchedinaRow extends StatelessWidget {
     final subtitle =
         '${DateFormatter.matchKickoffCompact(match.kickoff)} · ${match.homeTeam.stadium}';
 
+    return AnimatedSize(
+      duration: TotoMotion.base,
+      curve: TotoMotion.standard,
+      alignment: Alignment.topCenter,
+      child: _content(context, theme, c, enabled, done, subtitle),
+    );
+  }
+
+  Widget _content(BuildContext context, ThemeData theme, TotoColors c,
+      bool enabled, bool done, String subtitle) {
     if (!expanded) {
       return Opacity(
         opacity: enabled ? 1 : 0.6,
