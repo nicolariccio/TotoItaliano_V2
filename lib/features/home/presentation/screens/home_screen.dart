@@ -402,38 +402,35 @@ class _HeroMatchRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: TotoSpace.lg, vertical: TotoSpace.sm),
       onTap: onTap,
-      child: SizedBox(
-        height: 32,
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${match.homeTeam.shortName} - ${match.awayTeam.shortName}',
-                    style: theme.textTheme.titleMedium,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    '${DateFormatter.matchKickoffCompact(match.kickoff)} · ${match.homeTeam.stadium}',
-                    style: theme.textTheme.bodySmall,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${match.homeTeam.shortName} - ${match.awayTeam.shortName}',
+                  style: theme.textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${DateFormatter.matchKickoffCompact(match.kickoff)} · ${match.homeTeam.stadium}',
+                  style: theme.textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-            const SizedBox(width: TotoSpace.sm),
-            if (done)
+          ),
+          const SizedBox(width: TotoSpace.sm),
+          if (done)
               const TotoBadge('Scelto',
                   tone: TotoBadgeTone.brand,
                   icon: Icons.check_rounded,
                   uppercase: false)
             else
               const TotoDashedChip('Scegli'),
-          ],
-        ),
+        ],
       ),
     );
   }
