@@ -10,9 +10,14 @@
 import '../data/constants/serie_a_teams.dart';
 import '../data/models/league.dart';
 import '../data/models/league_member.dart';
+import '../data/models/league_tournament.dart';
 import '../data/models/match.dart';
 import '../data/models/matchday.dart';
 import '../data/models/team.dart';
+import '../data/models/tournament_bracket_tie.dart';
+import '../data/models/tournament_group.dart';
+import '../data/models/tournament_participant.dart';
+import '../data/scoring/tournament_scoring.dart';
 import '../features/auth/domain/entities/app_user.dart';
 import '../features/auth/domain/entities/user_role.dart';
 import '../features/predictions/domain/entities/prediction.dart';
@@ -447,3 +452,158 @@ List<Prediction> fakePredictionsFor(String leagueId, String matchdayId) =>
     allFakePredictions
         .where((p) => p.leagueId == leagueId && p.matchdayId == matchdayId)
         .toList();
+
+// ── Tornei di lega ───────────────────────────────────────────────────────────
+//  Un torneo per tipo, come nel piano approvato: Campionato attivo,
+//  Highlander con un paio di eliminati, Coppa a eliminazione diretta a metà
+//  (girone semifinale in corso) — tutti nella lega "Amici del Bar".
+
+const String tournamentCampionatoId = 't-campionato';
+const String tournamentHighlanderId = 't-highlander';
+const String tournamentCoppaId = 't-coppa';
+
+final List<String> _campionatoIds =
+    leagueBarMembers.take(10).map((m) => m.userId).toList();
+final List<String> _highlanderIds =
+    leagueBarMembers.take(8).map((m) => m.userId).toList();
+final List<String> _coppaSeeds =
+    leagueBarMembers.take(8).map((m) => m.userId).toList();
+
+final List<LeagueTournament> fakeTournaments = [
+  LeagueTournament(
+    id: tournamentCampionatoId,
+    leagueId: leagueBarId,
+    name: 'Campionato di ritorno',
+    type: TournamentType.campionato,
+    participantUserIds: _campionatoIds,
+    status: TournamentStatus.active,
+    createdAt: _now.subtract(const Duration(days: 20)),
+    createdFromMatchdayId: 'md9',
+  ),
+  LeagueTournament(
+    id: tournamentHighlanderId,
+    leagueId: leagueBarId,
+    name: 'Highlander',
+    type: TournamentType.highlander,
+    participantUserIds: _highlanderIds,
+    status: TournamentStatus.active,
+    createdAt: _now.subtract(const Duration(days: 14)),
+    createdFromMatchdayId: 'md10',
+    eliminationsPerMatchday: 1,
+    tiebreakOrder: TournamentScoring.defaultTiebreakOrder,
+    lastProcessedMatchdayId: 'md11',
+  ),
+  LeagueTournament(
+    id: tournamentCoppaId,
+    leagueId: leagueBarId,
+    name: 'Coppa del Bar',
+    type: TournamentType.coppa,
+    participantUserIds: _coppaSeeds,
+    status: TournamentStatus.active,
+    createdAt: _now.subtract(const Duration(days: 10)),
+    createdFromMatchdayId: 'md10',
+    coppaFormat: CoppaFormat.knockout,
+    phase: CoppaPhase.knockout,
+  ),
+];
+
+final Map<String, LeagueTournament> _tournamentsById = {
+  for (final t in fakeTournaments) t.id: t,
+};
+LeagueTournament? fakeTournamentById(String id) => _tournamentsById[id];
+List<LeagueTournament> fakeTournamentsFor(String leagueId) =>
+    fakeTournaments.where((t) => t.leagueId == leagueId).toList();
+
+List<TournamentParticipant> _tournamentParticipants(
+  List<String> ids,
+  List<int> points, {
+  Set<String> eliminated = const {},
+  Map<String, String> eliminatedAt = const {},
+}) {
+  final byId = {for (final m in leagueBarMembers) m.userId: m};
+  return [
+    for (var i = 0; i < ids.length; i++)
+      TournamentParticipant(
+        userId: ids[i],
+        username: byId[ids[i]]?.username ?? ids[i],
+        photoUrl: byId[ids[i]]?.photoUrl,
+        points: points[i],
+        active: !eliminated.contains(ids[i]),
+        eliminatedAtMatchdayId: eliminatedAt[ids[i]],
+      ),
+  ];
+}
+
+final List<TournamentParticipant> _campionatoParticipants =
+    _tournamentParticipants(
+        _campionatoIds, const [42, 38, 35, 31, 29, 26, 24, 20, 18, 15]);
+
+final List<TournamentParticipant> _highlanderParticipants =
+    _tournamentParticipants(
+  _highlanderIds,
+  const [15, 13, 12, 11, 9, 8, 6, 4],
+  eliminated: {_highlanderIds[6], _highlanderIds[7]},
+  eliminatedAt: {_highlanderIds[6]: 'md11', _highlanderIds[7]: 'md10'},
+);
+
+final List<TournamentParticipant> _coppaParticipants =
+    _tournamentParticipants(_coppaSeeds, List.filled(_coppaSeeds.length, 0));
+
+final Map<String, List<TournamentParticipant>> _participantsByTournament = {
+  tournamentCampionatoId: _campionatoParticipants,
+  tournamentHighlanderId: _highlanderParticipants,
+  tournamentCoppaId: _coppaParticipants,
+};
+List<TournamentParticipant> fakeParticipantsFor(String tournamentId) =>
+    _participantsByTournament[tournamentId] ?? const [];
+
+/// Round 1 (quarti) tutti risolti, semifinale (round 2) con un incontro già
+/// risolto e l'altro con giornata assegnata ma non ancora elaborato — la
+/// finale non esiste ancora, coerente con la macchina a stati reale (si
+/// genera solo quando l'intero turno precedente è risolto).
+final List<BracketTie> _coppaRound1 = () {
+  final generated = TournamentScoring.generateFirstRound(_coppaSeeds);
+  return [
+    for (var i = 0; i < generated.length; i++)
+      generated[i].copyWith(
+        matchdayId: 'md10',
+        pointsA: 18 - i * 2,
+        pointsB: 10 + i,
+        winnerId: (18 - i * 2) >= (10 + i)
+            ? generated[i].participantAId
+            : generated[i].participantBId,
+      ),
+  ];
+}();
+
+final List<BracketTie> _coppaRound2 = [
+  BracketTie(
+    id: 'r2-s0',
+    round: 2,
+    slot: 0,
+    participantAId: _coppaRound1[0].winnerId,
+    participantBId: _coppaRound1[1].winnerId,
+    matchdayId: 'md11',
+    pointsA: 14,
+    pointsB: 9,
+    winnerId: _coppaRound1[0].winnerId,
+  ),
+  BracketTie(
+    id: 'r2-s1',
+    round: 2,
+    slot: 1,
+    participantAId: _coppaRound1[2].winnerId,
+    participantBId: _coppaRound1[3].winnerId,
+    matchdayId: 'md12',
+  ),
+];
+
+final List<BracketTie> fakeCoppaBracket = [..._coppaRound1, ..._coppaRound2];
+
+final Map<String, List<BracketTie>> _bracketByTournament = {
+  tournamentCoppaId: fakeCoppaBracket,
+};
+List<BracketTie> fakeBracketFor(String tournamentId) =>
+    _bracketByTournament[tournamentId] ?? const [];
+
+List<TournamentGroup> fakeGroupsFor(String tournamentId) => const [];

@@ -12,6 +12,7 @@ import '../features/auth/presentation/providers/auth_repository_provider.dart';
 import '../features/auth/presentation/providers/current_user_provider.dart';
 import '../features/leaderboard/presentation/providers/leaderboard_providers.dart';
 import '../features/leagues/presentation/providers/league_providers.dart';
+import '../features/leagues/presentation/providers/tournament_providers.dart';
 import '../features/predictions/presentation/providers/prediction_providers.dart';
 import 'fake_data.dart';
 import 'fake_repositories.dart';
@@ -42,4 +43,15 @@ final List<Override> previewOverrides = [
     (ref, key) => Stream.value(fakePredictionsFor(key.leagueId, key.matchdayId)),
   ),
   leaderboardProvider.overrideWith((ref) => Stream.value(fakeGeneraleLeaderboard)),
+  tournamentRepositoryProvider.overrideWithValue(FakeTournamentRepository()),
+  leagueTournamentsProvider.overrideWith(
+      (ref, leagueId) => Stream.value(fakeTournamentsFor(leagueId))),
+  tournamentByIdProvider.overrideWith(
+      (ref, key) => Future.value(fakeTournamentById(key.tournamentId))),
+  tournamentParticipantsProvider.overrideWith(
+      (ref, key) => Stream.value(fakeParticipantsFor(key.tournamentId))),
+  tournamentBracketProvider.overrideWith(
+      (ref, key) => Stream.value(fakeBracketFor(key.tournamentId))),
+  tournamentGroupsProvider.overrideWith(
+      (ref, key) => Stream.value(fakeGroupsFor(key.tournamentId))),
 ];

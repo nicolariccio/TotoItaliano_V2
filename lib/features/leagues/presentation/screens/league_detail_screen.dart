@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/routing/route_paths.dart';
 import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/utils/error_snackbar.dart';
 import '../../../../core/widgets/podium_leaderboard.dart';
@@ -10,6 +12,7 @@ import '../../../../core/widgets/state_views.dart';
 import '../../../../core/widgets/toto_widgets.dart';
 import '../../../../data/models/league.dart';
 import '../../../../data/models/league_member.dart';
+import '../../../../data/models/league_tournament.dart';
 import '../../../../data/models/scoring_config.dart';
 import '../../../../data/providers/football_data_providers.dart';
 import '../../../auth/presentation/providers/current_user_provider.dart';
@@ -17,8 +20,9 @@ import '../../../predictions/presentation/controllers/schedina_controller.dart';
 import '../../../predictions/presentation/controllers/schedina_state.dart';
 import '../../../predictions/presentation/widgets/schedina_row.dart';
 import '../providers/league_providers.dart';
+import '../providers/tournament_providers.dart';
 
-enum _LeagueTab { classifica, schedina, gestione }
+enum _LeagueTab { classifica, schedina, tornei, gestione }
 
 /// Dettaglio di una lega: classifica e schedina sono entrambe scoperte
 /// da qui, non da tab globali — ogni lega ha la sua schedina indipendente
@@ -66,6 +70,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
           final tabs = [
             _LeagueTab.classifica,
             _LeagueTab.schedina,
+            _LeagueTab.tornei,
             if (isOwner) _LeagueTab.gestione,
           ];
           final effectiveTab = tabs.contains(_tab) ? _tab : _LeagueTab.classifica;
@@ -132,6 +137,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
                       labels: (t) => switch (t) {
                         _LeagueTab.classifica => 'Classifica',
                         _LeagueTab.schedina => 'Schedina',
+                        _LeagueTab.tornei => 'Tornei',
                         _LeagueTab.gestione => 'Gestione',
                       },
                       selected: effectiveTab,
@@ -144,6 +150,8 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
                 child: switch (effectiveTab) {
                   _LeagueTab.classifica => _ClassificaTab(leagueId: widget.leagueId),
                   _LeagueTab.schedina => _SchedinaTab(leagueId: widget.leagueId),
+                  _LeagueTab.tornei =>
+                    _TorneiTab(leagueId: widget.leagueId, isOwner: isOwner),
                   _LeagueTab.gestione => _GestioneTab(league: league),
                 },
               ),
@@ -183,6 +191,93 @@ class _ClassificaTab extends ConsumerWidget {
               last5: member.last5,
               exactCount: member.exactCount,
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Elenco dei tornei interni alla lega (Campionato/Coppa/Highlander — vedi
+/// [LeagueTournament]): visibile a tutti i membri, ma la CTA di creazione è
+/// riservata al proprietario, come le altre azioni di gestione della lega.
+class _TorneiTab extends ConsumerWidget {
+  const _TorneiTab({required this.leagueId, required this.isOwner});
+
+  final String leagueId;
+  final bool isOwner;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tournamentsAsync = ref.watch(leagueTournamentsProvider(leagueId));
+
+    return tournamentsAsync.when(
+      loading: () => const AppLoadingView(),
+      error: (error, stackTrace) => AppErrorView(
+        message: 'Non è stato possibile caricare i tornei.',
+        onRetry: () => ref.invalidate(leagueTournamentsProvider(leagueId)),
+      ),
+      data: (tournaments) => ListView(
+        padding: const EdgeInsets.fromLTRB(
+            TotoSpace.lg, TotoSpace.md, TotoSpace.lg, TotoSpace.navClearance),
+        children: [
+          if (isOwner)
+            Padding(
+              padding: const EdgeInsets.only(bottom: TotoSpace.lg),
+              child: OutlinedButton.icon(
+                onPressed: () => context
+                    .push(RoutePaths.tournamentCreatePath(leagueId)),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Crea torneo'),
+              ),
+            ),
+          if (tournaments.isEmpty)
+            const AppEmptyView(
+              title: 'Nessun torneo ancora',
+              subtitle: 'Chiedi al proprietario della lega di creare un '
+                  'Campionato, una Coppa o un Highlander.',
+            )
+          else
+            for (final tournament in tournaments)
+              Padding(
+                padding: const EdgeInsets.only(bottom: TotoSpace.sm),
+                child: TotoCard(
+                  onTap: () => context.push(RoutePaths.tournamentDetailPath(
+                      leagueId, tournament.id)),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(tournament.name,
+                            style: Theme.of(context).textTheme.titleSmall),
+                      ),
+                      TotoBadge(
+                        switch (tournament.type) {
+                          TournamentType.campionato => 'Campionato',
+                          TournamentType.coppa => 'Coppa',
+                          TournamentType.highlander => 'Highlander',
+                        },
+                        tone: TotoBadgeTone.brand,
+                        dense: true,
+                        uppercase: false,
+                      ),
+                      const SizedBox(width: TotoSpace.xs),
+                      TotoBadge(
+                        switch (tournament.status) {
+                          TournamentStatus.upcoming => 'In arrivo',
+                          TournamentStatus.active => 'In corso',
+                          TournamentStatus.finished => 'Conclusa',
+                        },
+                        tone: switch (tournament.status) {
+                          TournamentStatus.upcoming => TotoBadgeTone.neutral,
+                          TournamentStatus.active => TotoBadgeTone.success,
+                          TournamentStatus.finished => TotoBadgeTone.gold,
+                        },
+                        dense: true,
+                        uppercase: false,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
         ],
       ),
     );
