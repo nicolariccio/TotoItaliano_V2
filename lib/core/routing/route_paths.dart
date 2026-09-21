@@ -23,6 +23,14 @@ class RoutePaths {
   static const String leagueCreate = '/leagues/create';
   static const String leagueJoin = '/leagues/join';
 
+  static const String tournamentCreate = 'tornei/create';
+  static String tournamentCreatePath(String leagueId) =>
+      '/leagues/league/$leagueId/tornei/create';
+
+  static const String tournamentDetail = 'tornei/:tournamentId';
+  static String tournamentDetailPath(String leagueId, String tournamentId) =>
+      '/leagues/league/$leagueId/tornei/$tournamentId';
+
   static const String settings = '/profile/settings';
   static const String predictionHistory = '/profile/history';
 

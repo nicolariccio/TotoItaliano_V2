@@ -15,6 +15,8 @@ import '../../features/leagues/presentation/screens/league_create_screen.dart';
 import '../../features/leagues/presentation/screens/league_detail_screen.dart';
 import '../../features/leagues/presentation/screens/league_join_screen.dart';
 import '../../features/leagues/presentation/screens/leagues_screen.dart';
+import '../../features/leagues/presentation/screens/tournament_create_screen.dart';
+import '../../features/leagues/presentation/screens/tournament_detail_screen.dart';
 import '../../features/onboarding/presentation/providers/onboarding_provider.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
@@ -141,7 +143,23 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((ref) {
                   path: RoutePaths.leagueDetail,
                   builder: (context, state) => LeagueDetailScreen(
                     leagueId: state.pathParameters['leagueId']!,
+                    initialTab: state.extra as String?,
                   ),
+                  routes: [
+                    GoRoute(
+                      path: RoutePaths.tournamentCreate,
+                      builder: (context, state) => TournamentCreateScreen(
+                        leagueId: state.pathParameters['leagueId']!,
+                      ),
+                    ),
+                    GoRoute(
+                      path: RoutePaths.tournamentDetail,
+                      builder: (context, state) => TournamentDetailScreen(
+                        leagueId: state.pathParameters['leagueId']!,
+                        tournamentId: state.pathParameters['tournamentId']!,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

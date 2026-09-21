@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/routing/route_paths.dart';
 import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/utils/error_snackbar.dart';
 import '../../../../core/widgets/podium_leaderboard.dart';
@@ -10,6 +12,7 @@ import '../../../../core/widgets/state_views.dart';
 import '../../../../core/widgets/toto_widgets.dart';
 import '../../../../data/models/league.dart';
 import '../../../../data/models/league_member.dart';
+import '../../../../data/models/league_tournament.dart';
 import '../../../../data/models/scoring_config.dart';
 import '../../../../data/providers/football_data_providers.dart';
 import '../../../auth/presentation/providers/current_user_provider.dart';
@@ -17,8 +20,9 @@ import '../../../predictions/presentation/controllers/schedina_controller.dart';
 import '../../../predictions/presentation/controllers/schedina_state.dart';
 import '../../../predictions/presentation/widgets/schedina_row.dart';
 import '../providers/league_providers.dart';
+import '../providers/tournament_providers.dart';
 
-enum _LeagueTab { classifica, schedina, gestione }
+enum _LeagueTab { classifica, schedina, tornei, gestione }
 
 /// Dettaglio di una lega: classifica e schedina sono entrambe scoperte
 /// da qui, non da tab globali — ogni lega ha la sua schedina indipendente
@@ -26,16 +30,22 @@ enum _LeagueTab { classifica, schedina, gestione }
 /// leghe diverse), quindi il contesto "di quale lega" deve sempre essere
 /// esplicito.
 class LeagueDetailScreen extends ConsumerStatefulWidget {
-  const LeagueDetailScreen({super.key, required this.leagueId});
+  const LeagueDetailScreen({super.key, required this.leagueId, this.initialTab});
 
   final String leagueId;
+
+  /// 'schedina' per aprire direttamente la tab Schedina (es. dalla CTA
+  /// della hero card Home); qualsiasi altro valore o null apre Classifica.
+  final String? initialTab;
 
   @override
   ConsumerState<LeagueDetailScreen> createState() => _LeagueDetailScreenState();
 }
 
 class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
-  _LeagueTab _tab = _LeagueTab.classifica;
+  late _LeagueTab _tab = widget.initialTab == 'schedina'
+      ? _LeagueTab.schedina
+      : _LeagueTab.classifica;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +70,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
           final tabs = [
             _LeagueTab.classifica,
             _LeagueTab.schedina,
+            _LeagueTab.tornei,
             if (isOwner) _LeagueTab.gestione,
           ];
           final effectiveTab = tabs.contains(_tab) ? _tab : _LeagueTab.classifica;
@@ -126,6 +137,7 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
                       labels: (t) => switch (t) {
                         _LeagueTab.classifica => 'Classifica',
                         _LeagueTab.schedina => 'Schedina',
+                        _LeagueTab.tornei => 'Tornei',
                         _LeagueTab.gestione => 'Gestione',
                       },
                       selected: effectiveTab,
@@ -138,6 +150,8 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
                 child: switch (effectiveTab) {
                   _LeagueTab.classifica => _ClassificaTab(leagueId: widget.leagueId),
                   _LeagueTab.schedina => _SchedinaTab(leagueId: widget.leagueId),
+                  _LeagueTab.tornei =>
+                    _TorneiTab(leagueId: widget.leagueId, isOwner: isOwner),
                   _LeagueTab.gestione => _GestioneTab(league: league),
                 },
               ),
@@ -157,6 +171,7 @@ class _ClassificaTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final membersAsync = ref.watch(leagueMembersProvider(leagueId));
+    final currentUserId = ref.watch(currentUserProvider).valueOrNull?.id;
     return membersAsync.when(
       loading: () => const AppLoadingView(),
       error: (error, stackTrace) => AppErrorView(
@@ -165,6 +180,7 @@ class _ClassificaTab extends ConsumerWidget {
       ),
       data: (members) => PodiumLeaderboard(
         emptyTitle: 'Nessun membro ancora',
+        currentUserId: currentUserId,
         entries: [
           for (final member in members)
             RankedEntry(
@@ -181,13 +197,110 @@ class _ClassificaTab extends ConsumerWidget {
   }
 }
 
-class _SchedinaTab extends ConsumerWidget {
+/// Elenco dei tornei interni alla lega (Campionato/Coppa/Highlander — vedi
+/// [LeagueTournament]): visibile a tutti i membri, ma la CTA di creazione è
+/// riservata al proprietario, come le altre azioni di gestione della lega.
+class _TorneiTab extends ConsumerWidget {
+  const _TorneiTab({required this.leagueId, required this.isOwner});
+
+  final String leagueId;
+  final bool isOwner;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tournamentsAsync = ref.watch(leagueTournamentsProvider(leagueId));
+
+    return tournamentsAsync.when(
+      loading: () => const AppLoadingView(),
+      error: (error, stackTrace) => AppErrorView(
+        message: 'Non è stato possibile caricare i tornei.',
+        onRetry: () => ref.invalidate(leagueTournamentsProvider(leagueId)),
+      ),
+      data: (tournaments) => ListView(
+        padding: const EdgeInsets.fromLTRB(
+            TotoSpace.lg, TotoSpace.md, TotoSpace.lg, TotoSpace.navClearance),
+        children: [
+          if (isOwner)
+            Padding(
+              padding: const EdgeInsets.only(bottom: TotoSpace.lg),
+              child: OutlinedButton.icon(
+                onPressed: () => context
+                    .push(RoutePaths.tournamentCreatePath(leagueId)),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Crea torneo'),
+              ),
+            ),
+          if (tournaments.isEmpty)
+            const AppEmptyView(
+              title: 'Nessun torneo ancora',
+              subtitle: 'Chiedi al proprietario della lega di creare un '
+                  'Campionato, una Coppa o un Highlander.',
+            )
+          else
+            for (final tournament in tournaments)
+              Padding(
+                padding: const EdgeInsets.only(bottom: TotoSpace.sm),
+                child: TotoCard(
+                  onTap: () => context.push(RoutePaths.tournamentDetailPath(
+                      leagueId, tournament.id)),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(tournament.name,
+                            style: Theme.of(context).textTheme.titleSmall),
+                      ),
+                      TotoBadge(
+                        switch (tournament.type) {
+                          TournamentType.campionato => 'Campionato',
+                          TournamentType.coppa => 'Coppa',
+                          TournamentType.highlander => 'Highlander',
+                        },
+                        tone: TotoBadgeTone.brand,
+                        dense: true,
+                        uppercase: false,
+                      ),
+                      const SizedBox(width: TotoSpace.xs),
+                      TotoBadge(
+                        switch (tournament.status) {
+                          TournamentStatus.upcoming => 'In arrivo',
+                          TournamentStatus.active => 'In corso',
+                          TournamentStatus.finished => 'Conclusa',
+                        },
+                        tone: switch (tournament.status) {
+                          TournamentStatus.upcoming => TotoBadgeTone.neutral,
+                          TournamentStatus.active => TotoBadgeTone.success,
+                          TournamentStatus.finished => TotoBadgeTone.gold,
+                        },
+                        dense: true,
+                        uppercase: false,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SchedinaTab extends ConsumerStatefulWidget {
   const _SchedinaTab({required this.leagueId});
 
   final String leagueId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SchedinaTab> createState() => _SchedinaTabState();
+}
+
+class _SchedinaTabState extends ConsumerState<_SchedinaTab> {
+  // Una sola riga espansa alla volta, come da handoff: aprirne un'altra
+  // richiude la precedente invece di accumulare card aperte in lista.
+  String? _expandedMatchId;
+
+  @override
+  Widget build(BuildContext context) {
+    final leagueId = widget.leagueId;
     final matchdayAsync = ref.watch(currentMatchdayProvider);
     final matchesAsync = ref.watch(currentMatchdayMatchesProvider);
     // Chiave stabile anche prima che la giornata sia caricata: la config
@@ -250,27 +363,34 @@ class _SchedinaTab extends ConsumerWidget {
     final double progress =
         matches.isEmpty ? 0 : schedina.completedCount / matches.length;
 
+    final matchday = matchdayAsync.value!;
+    final deadlinePassed = DateTime.now().isAfter(matchday.predictionDeadline);
+
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              TotoSpace.lg, TotoSpace.md, TotoSpace.lg, TotoSpace.xs),
+        Container(
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: TotoSpace.lg),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: c.borderSubtle)),
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Giornata ${matchdayAsync.valueOrNull?.number ?? ''}',
+              Text('Giornata ${matchday.number}',
                   style: Theme.of(context).textTheme.titleMedium),
-              Text(
-                '${schedina.completedCount}/${matches.length} completati',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              if (!deadlinePassed)
+                TotoCountdown(deadline: matchday.predictionDeadline, size: 15)
+              else
+                TotoBadge.locked(),
             ],
           ),
         ),
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(
-                TotoSpace.lg, TotoSpace.sm, TotoSpace.lg, TotoSpace.sm),
+                TotoSpace.lg, TotoSpace.md, TotoSpace.lg, TotoSpace.sm),
             itemCount: matches.length,
             separatorBuilder: (context, index) =>
                 const SizedBox(height: TotoSpace.sm),
@@ -278,42 +398,77 @@ class _SchedinaTab extends ConsumerWidget {
               final match = matches[index];
               final pick = schedina.picks[match.id] ?? const PickState();
               return SchedinaRow(
-                  match: match, pick: pick, controller: controller);
+                match: match,
+                pick: pick,
+                controller: controller,
+                expanded: _expandedMatchId == match.id,
+                onToggle: () => setState(() {
+                  _expandedMatchId =
+                      _expandedMatchId == match.id ? null : match.id;
+                }),
+              );
             },
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(TotoSpace.lg, TotoSpace.xs,
+          padding: const EdgeInsets.fromLTRB(TotoSpace.lg, TotoSpace.md,
               TotoSpace.lg, TotoSpace.navClearance),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    deadlinePassed
+                        ? '${schedina.completedCount} di ${matches.length}'
+                        : '${schedina.completedCount} di ${matches.length} · '
+                            'chiude fra ${_untilClose(matchday.predictionDeadline)}',
+                    style: TotoType.number(13, display: false,
+                        color: c.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: TotoSpace.sm),
               ClipRRect(
                 borderRadius: BorderRadius.circular(TotoRadius.full),
                 child: LinearProgressIndicator(
                   value: progress,
-                  minHeight: 6,
+                  minHeight: 4,
                   backgroundColor: c.neutralContainer,
                   color: c.brand,
                 ),
               ),
               const SizedBox(height: TotoSpace.md),
-              FilledButton(
-                onPressed: canSave ? () => controller.save(matches) : null,
-                child: schedina.isSaving
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: c.textOnPrimary),
-                      )
-                    : const Text('Salva schedina'),
+              SizedBox(
+                height: 44,
+                child: FilledButton(
+                  onPressed: canSave ? () => controller.save(matches) : null,
+                  child: schedina.isSaving
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: c.textOnPrimary),
+                        )
+                      : const Text('Conferma'),
+                ),
               ),
             ],
           ),
         ),
       ],
     );
+  }
+
+  /// Es. "2h 47m" — usato nella barra persistente sopra la bottom nav,
+  /// più compatto del countdown a cifre della testata.
+  String _untilClose(DateTime deadline) {
+    final left = deadline.difference(DateTime.now());
+    if (left.isNegative) return '0m';
+    final hours = left.inHours;
+    final minutes = left.inMinutes.remainder(60);
+    return hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
   }
 }
 

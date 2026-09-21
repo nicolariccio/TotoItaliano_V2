@@ -6,6 +6,8 @@ class AppConstants {
   static const String appTagline = 'Il calcio italiano, la tua sfida.';
 
   static const String prefsOnboardingComplete = 'onboarding_complete';
+  static const String prefsThemeMode = 'theme_mode';
+  static const String prefsSchedinaRemindersEnabled = 'schedina_reminders_enabled';
 
   /// Punti di default del motore di scoring, usati solo come fallback
   /// se `scoringConfigs/{competitionId}` non è ancora stato creato.
