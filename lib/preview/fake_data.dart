@@ -237,10 +237,10 @@ List<Match> _buildMatchday12Matches() {
     ('MIL', 'FIO', _at(_now.add(const Duration(days: 3)), 18, 0), 'dom'),
     ('BOL', 'TOR', _at(_now.add(const Duration(days: 3)), 20, 45), 'dom'),
     ('UDI', 'CAG', _at(_now.add(const Duration(days: 2)), 15, 0), 'sab'),
-    ('GEN', 'VER', _at(_now.add(const Duration(days: 2)), 15, 0), 'sab'),
+    ('GEN', 'VEN', _at(_now.add(const Duration(days: 2)), 15, 0), 'sab'),
     ('LEC', 'PAR', _at(_now.add(const Duration(days: 3)), 12, 30), 'dom'),
-    ('EMP', 'MON', _at(_now.add(const Duration(days: 3)), 15, 0), 'dom'),
-    ('SAS', 'SAL', _at(_now.subtract(const Duration(hours: 1)), 15, 0), 'gio'),
+    ('FRO', 'MON', _at(_now.add(const Duration(days: 3)), 15, 0), 'dom'),
+    ('SAS', 'COM', _at(_now.subtract(const Duration(hours: 1)), 15, 0), 'gio'),
   ];
   return [
     for (var i = 0; i < pairs.length; i++)
@@ -268,8 +268,8 @@ List<Match> _buildPastMatches(Matchday md, int offsetDays) {
     ('LAZ', 'FIO'),
     ('BOL', 'UDI'),
     ('TOR', 'GEN'),
-    ('CAG', 'VER'),
-    ('LEC', 'EMP'),
+    ('CAG', 'VEN'),
+    ('LEC', 'FRO'),
   ];
   return [
     for (var i = 0; i < pairs.length; i++)
