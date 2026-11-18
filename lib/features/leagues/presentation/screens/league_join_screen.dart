@@ -69,11 +69,11 @@ class _LeagueJoinScreenState extends ConsumerState<LeagueJoinScreen> {
                 FilledButton(
                   onPressed: _isJoining ? null : _submit,
                   child: _isJoining
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary),
                         )
                       : const Text('Entra'),
                 ),

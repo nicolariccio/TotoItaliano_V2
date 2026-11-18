@@ -62,11 +62,11 @@ ios/ServiceDefinitions.json
 ios/Runner/GeneratedPluginRegistrant.*
 ios/Runner/GoogleService-Info.plist
 
-# Firebase — per-developer app config, not committed so the repo isn't
-# bound to one Firebase project. Regenerate with `flutterfire configure`.
-# firebase.json/.firebaserc/firestore.rules ARE committed: they're project
-# config and the actual security rules, not secrets.
-lib/firebase_options.dart
+# Firebase — firebase.json/.firebaserc/firestore.rules and
+# lib/firebase_options.dart ARE committed: i valori in firebase_options.dart
+# sono identificativi pubblici del progetto (non segreti), e la CI
+# (.github/workflows/deploy-web.yml) ne ha bisogno per compilare.
+# google-services.json / GoogleService-Info.plist restano ignorati sopra.
 functions/.env
 functions/node_modules/
 functions/lib/

@@ -35,6 +35,12 @@ dependencies:
   # Local storage
   shared_preferences: ^2.3.3
 
+  # Promemoria locali (schedina in scadenza) — niente Cloud Function/FCM,
+  # tutto pianificato sul dispositivo, zero costo.
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+  flutter_timezone: ^3.0.1
+
   # UI
   google_fonts: ^6.2.1
   cached_network_image: ^3.4.1

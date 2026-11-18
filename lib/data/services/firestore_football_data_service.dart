@@ -9,9 +9,9 @@ import 'football_data_service.dart';
 
 /// Implementazione reale di [FootballDataService]: legge i dati di
 /// competizioni/squadre/giornate/partite/classifica da Firestore, dove
-/// arrivano già sincronizzati da api-football tramite una Cloud Function
-/// (vedi functions/src/sync.ts) — il client non chiama mai api-football
-/// direttamente e non vede mai la relativa API key.
+/// arrivano scritti a mano dall'admin globale tramite il pannello admin
+/// (vedi AdminFootballDatasource) — nessuna dipendenza da un'API calcistica
+/// esterna, per restare a costo zero (piano Firebase Spark).
 class FirestoreFootballDataService implements FootballDataService {
   FirestoreFootballDataService({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;

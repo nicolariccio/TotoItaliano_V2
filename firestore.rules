@@ -127,6 +127,16 @@ service cloud.firestore {
         return exists(/databases/$(database)/documents/leagues/$(leagueId)/members/$(request.auth.uid));
       }
 
+      // Scoperto solo per il proprietario di QUELLA lega, e solo in lettura:
+      // serve al calcolo dei tornei (Highlander/Coppa), che deve leggere i
+      // pronostici di più membri per ricavare i punti di giornata — stesso
+      // bisogno già presente (ma non coperto) per il ricalcolo punteggi di
+      // ScoringRecomputeDatasource. Non allarga la scrittura né la lettura
+      // dei singoli membri fra loro: resta negata come oggi.
+      function isLeagueOwnerOf(leagueId) {
+        return get(/databases/$(database)/documents/leagues/$(leagueId)).data.ownerId == request.auth.uid;
+      }
+
       function isValidPredictionWrite() {
         let data = request.resource.data;
         return data.userId == request.auth.uid
@@ -142,7 +152,11 @@ service cloud.firestore {
               (data.exactAwayScore is int && data.exactAwayScore >= 0 && data.exactAwayScore <= 20));
       }
 
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid
+        || isGlobalAdmin()
+        || isLeagueOwnerOf(resource.data.leagueId)
+      );
       allow create: if isSignedIn() && isLeagueMember(request.resource.data.leagueId) && isValidPredictionWrite();
 
       // Due soli scriventi in update: il proprietario del pronostico (che
@@ -247,6 +261,41 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/leagues/$(leagueId)).data.ownerId == request.auth.uid
         && request.resource.data.leagueId == leagueId
         && request.resource.data.matchdayId == matchdayId;
+    }
+
+    // leagues/{leagueId}/tournaments/{tournamentId} (+ participants/bracket/
+    // groups) — competizioni interne alla lega (Campionato/Coppa/Highlander,
+    // vedi LeagueTournament). Lettura per qualunque membro della lega
+    // (come matchdayConfig sopra), scrittura solo dal proprietario della
+    // lega: è una funzionalità di lega, non di piattaforma, quindi niente
+    // branch isGlobalAdmin() qui.
+    match /leagues/{leagueId}/tournaments/{tournamentId} {
+      function isLeagueMemberOf(id) {
+        return exists(/databases/$(database)/documents/leagues/$(id)/members/$(request.auth.uid));
+      }
+
+      function isLeagueOwner() {
+        return isSignedIn()
+          && get(/databases/$(database)/documents/leagues/$(leagueId)).data.ownerId == request.auth.uid;
+      }
+
+      allow read: if isSignedIn() && isLeagueMemberOf(leagueId);
+      allow write: if isLeagueOwner();
+
+      match /participants/{userId} {
+        allow read: if isSignedIn() && isLeagueMemberOf(leagueId);
+        allow write: if isLeagueOwner();
+      }
+
+      match /bracket/{tieId} {
+        allow read: if isSignedIn() && isLeagueMemberOf(leagueId);
+        allow write: if isLeagueOwner();
+      }
+
+      match /groups/{groupId} {
+        allow read: if isSignedIn() && isLeagueMemberOf(leagueId);
+        allow write: if isLeagueOwner();
+      }
     }
 
     // Tutto il resto arriva nelle fasi successive insieme alla feature

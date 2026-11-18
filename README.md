@@ -43,9 +43,10 @@ convenzioni standard, ma non è ancora stato validato con `flutter analyze`
    dart pub global activate flutterfire_cli
    flutterfire configure
    ```
-   Genera `lib/firebase_options.dart` (gitignored di proposito, vedi
-   `lib/firebase_options.example.dart` per i dettagli). Serve un progetto
-   Firebase reale (Blaze plan se userai le Cloud Functions).
+   Genera `lib/firebase_options.dart` (committato; oggi contiene la sola
+   config web, questo comando lo completa con Android/iOS). Serve un
+   progetto Firebase reale; il piano gratuito Spark basta (nessuna Cloud
+   Function in uso).
 
 5. **Genera il codice** (freezed/json_serializable/riverpod_generator, da
    Phase 2 in poi quando verranno introdotti i modelli):
@@ -108,8 +109,10 @@ lib/
 
 - Nessuna credenziale, API key privata o secret è versionata nel repository
   (vedi `.gitignore`).
-- `lib/firebase_options.dart` è generato localmente da ciascun sviluppatore
-  via `flutterfire configure` e non viene committato.
+- `lib/firebase_options.dart` è committato (contiene solo identificativi
+  pubblici del progetto Firebase, non segreti): per ora con la sola
+  configurazione web; `flutterfire configure` lo rigenera con anche
+  Android/iOS.
 - Le Cloud Functions (cartella `functions/`, Phase 9) useranno
   `functions/.env` (gitignored) per eventuali secret (es. provider di
   pagamento), mai valori hardcoded nel codice.

@@ -13,10 +13,16 @@ class PodiumLeaderboard extends StatelessWidget {
   const PodiumLeaderboard(
       {super.key,
       required this.entries,
-      this.emptyTitle = 'Classifica non ancora disponibile'});
+      this.emptyTitle = 'Classifica non ancora disponibile',
+      this.currentUserId});
 
   final List<RankedEntry> entries;
   final String emptyTitle;
+
+  /// Se valorizzato e presente in [entries], la sua riga resta fissa sopra
+  /// la bottom nav (bordo blu, badge "TU") — cosi' l'utente sa sempre dove
+  /// si trova senza dover scorrere fino alla propria posizione.
+  final String? currentUserId;
 
   @override
   Widget build(BuildContext context) {
@@ -30,26 +36,62 @@ class PodiumLeaderboard extends StatelessWidget {
     final rest =
         entries.length > 3 ? entries.sublist(3) : const <RankedEntry>[];
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-          TotoSpace.lg, TotoSpace.lg, TotoSpace.lg, TotoSpace.navClearance),
+    final meIndex =
+        currentUserId == null ? -1 : entries.indexWhere((e) => e.id == currentUserId);
+    // La riga "TU" nel podio (posizione 1-3) è già ben visibile: la fissiamo
+    // in fondo solo se l'utente è in lista (posizione 4+ o non ancora
+    // caricata), evitando un duplicato ridondante sopra il podio stesso.
+    final pinnedMe = meIndex >= 3 ? entries[meIndex] : null;
+
+    return Stack(
       children: [
-        FadeSlideIn(
-          child: TotoPodium(
-            entries: [
-              for (final e in podium)
-                PodiumEntry(
-                    name: e.username, points: e.points, avatarUrl: e.photoUrl),
-            ],
-          ),
+        ListView(
+          padding: EdgeInsets.fromLTRB(TotoSpace.lg, TotoSpace.lg, TotoSpace.lg,
+              pinnedMe != null ? 88 : TotoSpace.navClearance),
+          children: [
+            FadeSlideIn(
+              child: TotoPodium(
+                entries: [
+                  for (final e in podium)
+                    PodiumEntry(
+                        name: e.username,
+                        points: e.points,
+                        avatarUrl: e.photoUrl),
+                ],
+              ),
+            ),
+            if (rest.isNotEmpty) const SizedBox(height: TotoSpace.x3l),
+            for (var i = 0; i < rest.length; i++)
+              // La riga dell'utente è già fissata sopra la bottom nav
+              // (vedi pinnedMe sotto): non ripeterla anche qui, o compare
+              // due volte non appena esce dal podio.
+              if (pinnedMe == null || rest[i].id != currentUserId)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: TotoSpace.sm),
+                  child: FadeSlideIn(
+                    delay: Duration(milliseconds: 40 * i.clamp(0, 10)),
+                    child: _RankedRow(
+                      position: i + 4,
+                      entry: rest[i],
+                      highlighted: rest[i].id == currentUserId,
+                    ),
+                  ),
+                ),
+          ],
         ),
-        if (rest.isNotEmpty) const SizedBox(height: TotoSpace.x3l),
-        for (var i = 0; i < rest.length; i++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: TotoSpace.sm),
-            child: FadeSlideIn(
-              delay: Duration(milliseconds: 40 * i.clamp(0, 10)),
-              child: _RankedRow(position: i + 4, entry: rest[i]),
+        if (pinnedMe != null)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  TotoSpace.lg, 0, TotoSpace.lg, TotoSpace.navClearance - 16),
+              child: _RankedRow(
+                position: meIndex + 1,
+                entry: pinnedMe,
+                highlighted: true,
+              ),
             ),
           ),
       ],
@@ -58,24 +100,36 @@ class PodiumLeaderboard extends StatelessWidget {
 }
 
 class _RankedRow extends StatelessWidget {
-  const _RankedRow({required this.position, required this.entry});
+  const _RankedRow(
+      {required this.position, required this.entry, this.highlighted = false});
 
   final int position;
   final RankedEntry entry;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final c = context.c;
-    return TotoCard(
+    return Container(
+      decoration: highlighted
+          ? BoxDecoration(
+              color: c.brandContainer,
+              borderRadius: BorderRadius.circular(TotoRadius.lg),
+              border: Border.all(color: c.brand),
+            )
+          : null,
+      child: TotoCard(
+      level: highlighted ? TotoCardLevel.flat : TotoCardLevel.interactive,
       padding: const EdgeInsets.symmetric(
           horizontal: TotoSpace.lg, vertical: TotoSpace.md),
       child: Row(
         children: [
           SizedBox(
-            width: 28,
+            width: 32,
             child: Text('$position',
-                style: theme.textTheme.labelLarge, textAlign: TextAlign.center),
+                style: TotoType.number(15, display: false, color: c.textSecondary),
+                textAlign: TextAlign.center),
           ),
           const SizedBox(width: TotoSpace.md),
           CircleAvatar(
@@ -98,9 +152,20 @@ class _RankedRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('@${entry.username}',
-                    style: theme.textTheme.labelLarge,
-                    overflow: TextOverflow.ellipsis),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text('@${entry.username}',
+                          style: theme.textTheme.labelLarge,
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    if (highlighted) ...[
+                      const SizedBox(width: TotoSpace.xs),
+                      const TotoBadge('TU',
+                          tone: TotoBadgeTone.brand, dense: true, uppercase: false),
+                    ],
+                  ],
+                ),
                 if (entry.last5.isNotEmpty || entry.exactCount > 0) ...[
                   const SizedBox(height: TotoSpace.xxs),
                   Row(
@@ -130,10 +195,20 @@ class _RankedRow extends StatelessWidget {
               ],
             ),
           ),
-          Text('${entry.points} pt',
-              style:
-                  TotoType.number(15, display: false, color: c.textSecondary)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('${entry.points} pt',
+                  style: TotoType.number(15,
+                      display: false, color: c.textSecondary)),
+              if (entry.delta != null) ...[
+                const SizedBox(height: 2),
+                TotoRankDelta(delta: entry.delta!),
+              ],
+            ],
+          ),
         ],
+      ),
       ),
     );
   }

@@ -8,12 +8,12 @@ import '../services/firestore_football_data_service.dart';
 import '../services/football_data_service.dart';
 
 /// Unico punto in cui l'app sceglie l'implementazione concreta di
-/// [FootballDataService]. Ora legge da Firestore ([FirestoreFootballDataService]):
-/// i dati sono scritti da un admin globale (vedi feature `admin`) invece
-/// che sincronizzati da api-football (disattivo, piano Spark). Il resto
-/// dello stack (ApiFootballDataService + cf-worker/, MockFootballDataService)
-/// resta nel repo, inattivo, pronto a essere riattivato cambiando solo
-/// questa riga.
+/// [FootballDataService]. Legge da Firestore ([FirestoreFootballDataService]):
+/// competizione/giornate/partite/risultati sono scritti a mano dall'admin
+/// globale (vedi feature `admin`), non sincronizzati da alcuna API calcistica
+/// esterna — scelta deliberata per restare a costo zero (Firebase Spark,
+/// nessuna Cloud Function/proxy da pagare o mantenere). [MockFootballDataService]
+/// resta nel repo solo per i test.
 final Provider<FootballDataService> footballDataServiceProvider =
     Provider<FootballDataService>(
   (ref) => FirestoreFootballDataService(),

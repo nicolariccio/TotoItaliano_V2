@@ -9,6 +9,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -920,4 +921,394 @@ class TotoEmptyState extends StatelessWidget {
       ],
     );
   }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  9. ANELLO DI PROGRESSO
+//     Usato dalla hero card Home per "X di Y compilate": la percentuale è
+//     lo stato, il numero al centro la conferma in cifre — mai solo colore.
+// ═════════════════════════════════════════════════════════════════════════════
+
+class TotoProgressRing extends StatelessWidget {
+  const TotoProgressRing({
+    super.key,
+    required this.value,
+    this.size = 76,
+    this.strokeWidth = 6,
+    this.label,
+  });
+
+  /// 0.0–1.0.
+  final double value;
+  final double size;
+  final double strokeWidth;
+
+  /// Testo al centro dell'anello. Se null, mostra la percentuale.
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final clamped = value.clamp(0.0, 1.0);
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: clamped),
+            duration: TotoMotion.slow,
+            curve: TotoMotion.standard,
+            builder: (context, animated, _) => CustomPaint(
+              size: Size.square(size),
+              painter: _RingPainter(
+                value: animated,
+                strokeWidth: strokeWidth,
+                trackColor: c.neutralContainer,
+                fillColor: c.brand,
+              ),
+            ),
+          ),
+          Text(
+            label ?? '${(clamped * 100).round()}%',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter({
+    required this.value,
+    required this.strokeWidth,
+    required this.trackColor,
+    required this.fillColor,
+  });
+
+  final double value;
+  final double strokeWidth;
+  final Color trackColor;
+  final Color fillColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = (size.shortestSide - strokeWidth) / 2;
+    final track = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    final fill = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, track);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * value,
+      false,
+      fill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _RingPainter oldDelegate) =>
+      oldDelegate.value != value ||
+      oldDelegate.trackColor != trackColor ||
+      oldDelegate.fillColor != fillColor;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  10. INPUT CODICE — 6 caselle per il codice invito di una lega.
+// ═════════════════════════════════════════════════════════════════════════════
+
+class TotoCodeInput extends StatefulWidget {
+  const TotoCodeInput({
+    super.key,
+    required this.length,
+    required this.onChanged,
+    this.onSubmitted,
+  });
+
+  final int length;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String>? onSubmitted;
+
+  @override
+  State<TotoCodeInput> createState() => _TotoCodeInputState();
+}
+
+class _TotoCodeInputState extends State<TotoCodeInput> {
+  late final List<TextEditingController> _controllers =
+      List.generate(widget.length, (_) => TextEditingController());
+  late final List<FocusNode> _nodes =
+      List.generate(widget.length, (_) => FocusNode());
+
+  @override
+  void dispose() {
+    for (final controller in _controllers) {
+      controller.dispose();
+    }
+    for (final node in _nodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  String get _code => _controllers.map((c) => c.text).join();
+
+  void _handleChange(int index, String value) {
+    // Incolla-e-distribuisci: se l'utente incolla l'intero codice nella
+    // prima casella, lo spargiamo su tutte invece di scartare il resto.
+    if (value.length > 1) {
+      final chars = value.split('');
+      for (var i = 0; i < widget.length; i++) {
+        _controllers[i].text = i < chars.length ? chars[i] : '';
+      }
+      final lastFilled = (chars.length - 1).clamp(0, widget.length - 1);
+      _nodes[lastFilled].requestFocus();
+      widget.onChanged(_code);
+      if (_code.length == widget.length) widget.onSubmitted?.call(_code);
+      return;
+    }
+
+    if (value.isNotEmpty && index < widget.length - 1) {
+      _nodes[index + 1].requestFocus();
+    }
+    widget.onChanged(_code);
+    if (_code.length == widget.length) widget.onSubmitted?.call(_code);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        for (var i = 0; i < widget.length; i++)
+          SizedBox(
+            width: 44,
+            height: 52,
+            child: Focus(
+              skipTraversal: true,
+              canRequestFocus: false,
+              onKeyEvent: (node, event) {
+                if (event is KeyDownEvent &&
+                    event.logicalKey == LogicalKeyboardKey.backspace &&
+                    _controllers[i].text.isEmpty &&
+                    i > 0) {
+                  _nodes[i - 1].requestFocus();
+                }
+                return KeyEventResult.ignored;
+              },
+              child: TextField(
+                controller: _controllers[i],
+                focusNode: _nodes[i],
+                textAlign: TextAlign.center,
+                textCapitalization: TextCapitalization.characters,
+                keyboardType: TextInputType.visiblePassword,
+                maxLength: i == 0 ? widget.length : 1,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+                decoration: InputDecoration(
+                  counterText: '',
+                  filled: true,
+                  fillColor: c.surface2,
+                  contentPadding: EdgeInsets.zero,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(TotoRadius.sm),
+                    borderSide: BorderSide(color: c.borderStrong),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(TotoRadius.sm),
+                    borderSide: BorderSide(color: c.borderStrong),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(TotoRadius.sm),
+                    borderSide: BorderSide(color: c.brand, width: 2),
+                  ),
+                ),
+                onChanged: (value) => _handleChange(i, value),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  11. BARRA DI PRECISIONE — label a sx, percentuale tabulare a dx, traccia
+//      8px sotto. Usata nel Profilo per mercato (1X2, Gol/NoGol, U/O, Esatto).
+// ═════════════════════════════════════════════════════════════════════════════
+
+class TotoAccuracyBar extends StatelessWidget {
+  const TotoAccuracyBar({
+    super.key,
+    required this.label,
+    required this.value,
+    this.fillColor,
+  });
+
+  final String label;
+
+  /// 0.0–1.0.
+  final double value;
+
+  /// Se null, usa `c.brand` (oro solo per "Risultato esatto", vedi handoff).
+  final Color? fillColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final theme = Theme.of(context);
+    final fill = fillColor ?? c.brand;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: theme.textTheme.bodyLarge),
+            Text('${(value.clamp(0, 1) * 100).round()}%',
+                style: TotoType.number(15, display: false, color: fill)),
+          ],
+        ),
+        const SizedBox(height: TotoSpace.sm),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(TotoRadius.full),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: value.clamp(0.0, 1.0)),
+            duration: TotoMotion.slow,
+            curve: TotoMotion.standard,
+            builder: (context, animated, _) => LinearProgressIndicator(
+              value: animated,
+              minHeight: 8,
+              backgroundColor: c.surface2,
+              color: fill,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  12. DELTA DI CLASSIFICA — ▲/▼/— rispetto alla giornata precedente.
+//      Mai solo colore: la direzione della freccia porta il significato.
+// ═════════════════════════════════════════════════════════════════════════════
+
+class TotoRankDelta extends StatelessWidget {
+  const TotoRankDelta({super.key, required this.delta});
+
+  /// Positivo = risalita in classifica, negativo = discesa, 0 = invariato.
+  final int delta;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    if (delta == 0) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.remove_rounded, size: 14, color: c.textTertiary),
+        ],
+      );
+    }
+    final up = delta > 0;
+    final color = up ? c.success : c.danger;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          up ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+          size: 18,
+          color: color,
+        ),
+        Text('${delta.abs()}',
+            style: TotoType.number(13, display: false, color: color)),
+      ],
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  13. PILL TRATTEGGIATA — "SCEGLI": una partita ancora senza pronostico.
+//      Bordo dashed invece che pieno, cosi' si distingue dal pill blu del
+//      pronostico gia' fatto anche in scala di grigi.
+// ═════════════════════════════════════════════════════════════════════════════
+
+class TotoDashedChip extends StatelessWidget {
+  const TotoDashedChip(this.label, {super.key});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return CustomPaint(
+      painter: _DashedRRectPainter(color: c.borderStrong, radius: TotoRadius.full),
+      child: Container(
+        height: 26,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        alignment: Alignment.center,
+        child: Text(
+          label.toUpperCase(),
+          style: Theme.of(context)
+              .textTheme
+              .labelSmall!
+              .copyWith(color: c.textTertiary),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashedRRectPainter extends CustomPainter {
+  _DashedRRectPainter({
+    required this.color,
+    required this.radius,
+    this.dashWidth = 4,
+    this.gapWidth = 3,
+  });
+
+  final Color color;
+  final double radius;
+  final double dashWidth;
+  final double gapWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rrect);
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final next = math.min(distance + dashWidth, metric.length);
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + gapWidth;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.radius != radius;
 }

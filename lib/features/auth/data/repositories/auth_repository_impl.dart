@@ -74,7 +74,9 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> loginWithEmail(
       {required String email, required String password}) async {
     try {
-      await _authDatasource.signInWithEmail(email, password);
+      final UserCredential credential =
+          await _authDatasource.signInWithEmail(email, password);
+      await _ensureProfileOrSignOut(credential.user!);
     } catch (error) {
       throw AppExceptionMapper.map(error);
     }
@@ -87,32 +89,55 @@ class AuthRepositoryImpl implements AuthRepository {
           await _authDatasource.signInWithGoogle();
       final User firebaseUser = credential.user!;
       final bool isNewUser = credential.additionalUserInfo?.isNewUser ?? false;
+      final bool created = await _ensureProfileOrSignOut(firebaseUser);
 
-      if (isNewUser) {
-        final String baseUsername =
-            _usernameFromEmail(firebaseUser.email ?? firebaseUser.uid);
-        final String username = await _uniqueUsername(baseUsername);
-        final List<String> nameParts =
-            (firebaseUser.displayName ?? '').trim().split(' ');
-
-        final user = AppUser(
-          id: firebaseUser.uid,
-          email: firebaseUser.email ?? '',
-          username: username,
-          firstName: nameParts.isNotEmpty ? nameParts.first : username,
-          lastName: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
-          photoUrl: firebaseUser.photoURL,
-          referralCode: CodeGenerator.referralCode(seed: username),
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-        await _userDatasource.createUser(user);
-      }
-
-      return isNewUser;
+      return isNewUser || created;
     } catch (error) {
       throw AppExceptionMapper.map(error);
     }
+  }
+
+  /// Come [_ensureProfile], ma se Firestore non è raggiungibile/leggibile
+  /// (database non creato, regole non pubblicate, offline) chiude anche la
+  /// sessione Auth: l'errore arriva alla UI e l'utente non resta "mezzo
+  /// loggato" su una schermata di login muta.
+  Future<bool> _ensureProfileOrSignOut(User firebaseUser) async {
+    try {
+      return await _ensureProfile(firebaseUser);
+    } catch (_) {
+      try {
+        await _authDatasource.signOut();
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
+  /// Garantisce che esista `users/{uid}`. Il router considera autenticato
+  /// solo chi ha SIA la sessione Auth SIA il profilo: un account presente in
+  /// Auth ma senza profilo (creato dalla console Firebase, o registrazione
+  /// interrotta a metà) altrimenti resterebbe sul login senza alcun errore.
+  /// Ritorna `true` se il profilo è stato creato ora.
+  Future<bool> _ensureProfile(User firebaseUser) async {
+    if (await _userDatasource.getUser(firebaseUser.uid) != null) return false;
+
+    final String email = firebaseUser.email ?? '';
+    final String username = await _uniqueUsername(
+        _usernameFromEmail(email.isEmpty ? firebaseUser.uid : email));
+    final List<String> nameParts =
+        (firebaseUser.displayName ?? '').trim().split(' ');
+
+    await _userDatasource.createUser(AppUser(
+      id: firebaseUser.uid,
+      email: email,
+      username: username,
+      firstName: nameParts.first.isNotEmpty ? nameParts.first : username,
+      lastName: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
+      photoUrl: firebaseUser.photoURL,
+      referralCode: CodeGenerator.referralCode(seed: username),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ));
+    return true;
   }
 
   Future<String> _uniqueUsername(String base) async {

@@ -146,11 +146,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 FilledButton(
                   onPressed: isLoading ? null : _submit,
                   child: isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary),
                         )
                       : const Text('Registrati'),
                 ),

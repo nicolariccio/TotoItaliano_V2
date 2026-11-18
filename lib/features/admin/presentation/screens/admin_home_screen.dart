@@ -8,6 +8,7 @@ import '../../../../core/utils/error_snackbar.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../../core/widgets/toto_widgets.dart';
+import '../../../../data/constants/serie_a_matchday_12.dart';
 import '../../../../data/constants/serie_a_teams.dart';
 import '../../../../data/models/competition.dart';
 import '../../../../data/models/matchday.dart';
@@ -201,6 +202,16 @@ class _CompetitionManagement extends ConsumerWidget {
             ),
           ],
         ),
+        if (matchdaysAsync.valueOrNull != null &&
+            !matchdaysAsync.valueOrNull!.any((m) => m.number == 12))
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => _seedMatchday12(context, ref, competition.id),
+              icon: const Icon(Icons.science_outlined),
+              label: const Text('Carica giornata 12 (prova)'),
+            ),
+          ),
         const SizedBox(height: TotoSpace.sm),
         matchdaysAsync.when(
           loading: () => const Padding(
@@ -251,6 +262,48 @@ class _CompetitionManagement extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// Crea (importando le squadre se mancano) la 12ª giornata reale con le
+  /// 10 partite, già "In corso" e con scadenza al primo calcio d'inizio:
+  /// permette di simulare subito la schedina.
+  Future<void> _seedMatchday12(
+      BuildContext context, WidgetRef ref, String competitionId) async {
+    final repo = ref.read(adminRepositoryProvider);
+    try {
+      if ((ref.read(teamsProvider).valueOrNull ?? const []).isEmpty) {
+        await repo.seedTeams(competitionId, serieATeams);
+      }
+      final teamsByName = {for (final t in serieATeams) t.name: t};
+      final kickoffs = serieAMatchday12.map((f) => f.kickoff).toList()..sort();
+
+      final matchdayId = await repo.createMatchday(
+        competitionId: competitionId,
+        number: 12,
+        startDate: kickoffs.first.subtract(const Duration(days: 3)),
+        endDate: kickoffs.last.add(const Duration(hours: 3)),
+        predictionDeadline: kickoffs.first,
+      );
+      for (final f in serieAMatchday12) {
+        await repo.createMatch(
+          competitionId: competitionId,
+          matchdayId: matchdayId,
+          homeTeam: teamsByName[f.home]!,
+          awayTeam: teamsByName[f.away]!,
+          kickoff: f.kickoff,
+        );
+      }
+      await repo.setMatchdayStatus(
+          competitionId, matchdayId, MatchdayStatus.active);
+      ref.invalidate(teamsProvider);
+      ref.invalidate(matchdaysProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Giornata 12 caricata: 10 partite, pronostici aperti.')));
+      }
+    } catch (error) {
+      if (context.mounted) showFailureSnackBar(context, error);
+    }
   }
 
   Future<void> _createMatchday(BuildContext context, WidgetRef ref,

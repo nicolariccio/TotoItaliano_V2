@@ -10,7 +10,8 @@ class RankedEntry {
       this.photoUrl,
       required this.points,
       this.last5 = const <bool>[],
-      this.exactCount = 0});
+      this.exactCount = 0,
+      this.delta});
 
   final String id;
   final String username;
@@ -21,4 +22,9 @@ class RankedEntry {
   // ancora tracciato per lega.
   final List<bool> last5;
   final int exactCount;
+  // Variazione di posizione rispetto alla giornata precedente (positivo =
+  // risalita). Null = non disponibile: nessuna classifica-giornata-precedente
+  // è ancora persistita lato backend, quindi la UI non la mostra invece di
+  // inventare un valore.
+  final int? delta;
 }
