@@ -39,3 +39,19 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: totoitaliano-aa72e
           channelId: live
+
+      # Pubblica regole e indici Firestore con lo stesso service account.
+      # Richiede che il database Firestore esista già (console Firebase →
+      # Build → Firestore Database → Crea database) e che il service account
+      # abbia il ruolo "Firebase Rules Admin". Se manca qualcosa il sito resta
+      # comunque pubblicato: l'errore compare come warning nel log.
+      - name: Deploy regole Firestore
+        continue-on-error: true
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools@13 deploy --only firestore --project totoitaliano-aa72e --non-interactive \
+            || echo "::warning::Deploy regole Firestore fallito: controlla che il database esista e che il service account abbia il ruolo Firebase Rules Admin."
+          rm -f "$RUNNER_TEMP/sa.json"
