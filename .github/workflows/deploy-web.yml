@@ -8,6 +8,10 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -24,6 +28,9 @@ jobs:
 
       # I *.freezed.dart sono gitignorati: vanno rigenerati in CI.
       - run: dart run build_runner build
+
+      # Cancello qualità: se un test fallisce non si pubblica nulla.
+      - run: flutter test
 
       - run: flutter build web --release
 
