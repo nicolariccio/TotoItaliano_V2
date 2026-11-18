@@ -1,0 +1,34 @@
+name: Deploy web su Firebase Hosting
+
+on:
+  push:
+    branches:
+      - claude/totoitaliano-screens-1yhd9z
+      - master
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.0
+          cache: true
+
+      - run: flutter pub get
+
+      # I *.freezed.dart sono gitignorati: vanno rigenerati in CI.
+      - run: dart run build_runner build
+
+      - run: flutter build web --release
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: totoitaliano-aa72e
+          channelId: live
