@@ -9,7 +9,7 @@
 //    MaterialApp(
 //      theme: TotoTheme.light(),
 //      darkTheme: TotoTheme.dark(),
-//      themeMode: ThemeMode.dark,   // v1: dark-only
+//      themeMode: ThemeMode.dark,   // default: "Stadio di notte"
 //    );
 //
 //  Accesso ai token semantici:
@@ -28,51 +28,49 @@ import 'package:google_fonts/google_fonts.dart';
 class TotoPalette {
   TotoPalette._();
 
-  // ── Neutri scuri ───────────────────────────────────────────────────────────
-  static const ink000 = Color(0xFF0A0A0B); // canvas
-  static const ink050 = Color(0xFF111114); // surface flat
-  static const ink100 = Color(0xFF16161A); // card interattiva
-  static const ink200 = Color(0xFF1C1C22); // card elevata / input / segmented
-  static const ink300 = Color(0xFF24242B); // pressed / thumb
-  static const ink400 = Color(0xFF2E2E35); // bordo forte
-  static const ink500 = Color(0xFF3A3A43); // bordo focus
-  static const ink600 = Color(0xFF4A4A52); // disabled text
-  static const ink700 = Color(0xFF7C7C85); // text tertiary  (4.8:1 su ink000)
-  static const ink800 = Color(0xFFA1A1A8); // text secondary (7.7:1)
-  static const ink900 = Color(0xFFF5F5F7); // text primary  (18.1:1)
+  // ── Neutri scuri ("Stadio di notte": nero con una punta di verde prato) ───
+  static const ink000 = Color(0xFF060A08); // canvas
+  static const ink050 = Color(0xFF0A0F0C); // surface flat
+  static const ink100 = Color(0xFF0F1612); // card interattiva
+  static const ink200 = Color(0xFF151E19); // card elevata / input / segmented
+  static const ink300 = Color(0xFF1D2822); // pressed / thumb / bordo sottile
+  static const ink400 = Color(0xFF2B3A32); // bordo forte
+  static const ink500 = Color(0xFF3A4D42); // bordo focus
+  static const ink600 = Color(0xFF4A5A50); // disabled text
+  static const ink700 = Color(0xFF86928A); // text tertiary  (6.3:1 su ink000)
+  static const ink800 = Color(0xFFB0BAB3); // text secondary (9.9:1)
+  static const ink900 = Color(0xFFF4F7F2); // text primary  (18.5:1)
 
   // ── Neutri chiari (light mode) ─────────────────────────────────────────────
   static const day000 = Color(0xFFFFFFFF);
-  static const day050 = Color(0xFFF7F7F9);
+  static const day050 = Color(0xFFF3F6EF);
   static const day100 = Color(0xFFFFFFFF);
-  static const day200 = Color(0xFFF2F2F5);
-  static const day300 = Color(0xFFE8E8ED);
-  static const day400 = Color(0xFFE5E5EA);
-  static const day500 = Color(0xFFD1D1D6);
-  static const day600 = Color(0xFFAEAEB4);
-  static const day700 = Color(0xFF73737B); // 4.7:1 su bianco
-  static const day800 = Color(0xFF55555E);
-  static const day900 = Color(0xFF0A0A0B);
+  static const day200 = Color(0xFFEBEFE6);
+  static const day300 = Color(0xFFE1E6DB);
+  static const day400 = Color(0xFFD9DFD2);
+  static const day500 = Color(0xFFC3CBBC);
+  static const day600 = Color(0xFFA3ADA5);
+  static const day700 = Color(0xFF5F6A62); // 5.3:1 su canvas chiaro
+  static const day800 = Color(0xFF414B44);
+  static const day900 = Color(0xFF0A0F0A);
 
-  // ── Brand blu ("azzurro") ──────────────────────────────────────────────────
-  // blue600 è l'unico stop usato come FILL con testo bianco: 4.80:1.
-  // Funziona anche come testo su bianco: 4.80:1. Un solo valore, due modalità.
-  static const blue200 = Color(0xFFB9D6FF);
-  static const blue300 = Color(0xFF7FB4FF);
-  static const blue400 = Color(0xFF4D9AFF); // icone/testo su scuro  6.9:1
-  static const blue500 = Color(0xFF1F80FF); // accent su scuro       5.3:1
-  static const blue600 =
-      Color(0xFF0B6BF0); // FILL primario         4.8:1 vs #FFF
-  static const blue700 = Color(0xFF0A57C4); // pressed
-  static const blue800 = Color(0xFF0B3F8C);
-  static const blueTintDark = Color(0xFF0E1F3D); // container su scuro
-  static const blueTintLight = Color(0xFFE7F0FF);
+  // ── Brand verde prato ──────────────────────────────────────────────────────
+  // Su scuro l'accento è un lime "volt" (testo scuro sopra, 14:1). Su chiaro
+  // il lime non regge, quindi il brand diventa un verde profondo con testo
+  // bianco (5.4:1): due valori, un'unica identità.
+  static const pitchVolt = Color(0xFFC8F52F); // accent su scuro: testo/fill
+  static const pitchVoltPressed = Color(0xFFA9D61C);
+  static const pitchVoltTint = Color(0xFF16200A); // container su scuro
+  static const pitchDeep = Color(0xFF0E7A3A); // brand su chiaro: testo/fill
+  static const pitchDeepPressed = Color(0xFF0A5F2E);
+  static const pitchDeepTint = Color(0xFFE6F4D2); // container su chiaro
+  static const onVolt = Color(0xFF0A0F0A);
 
   // ── Semantici ──────────────────────────────────────────────────────────────
-  static const green = Color(0xFF3DDC5C); // 10.9:1 su ink000
-  static const greenTintDark = Color(0xFF112A18);
-  static const greenBorderDark = Color(0xFF1E5C2E);
-  static const greenLight = Color(0xFF128036);
+  static const green = Color(0xFF34D9A0); // mint: distinto dal lime del brand
+  static const greenTintDark = Color(0xFF0F2A22);
+  static const greenBorderDark = Color(0xFF1F5C47);
+  static const greenLight = Color(0xFF0A7A68);
 
   static const red = Color(0xFFFF5A50); // 6.4:1
   static const redTintDark = Color(0xFF2C1315);
@@ -193,17 +191,17 @@ class TotoColors extends ThemeExtension<TotoColors> {
     surfacePressed: TotoPalette.ink300,
     borderSubtle: TotoPalette.ink300,
     borderStrong: TotoPalette.ink400,
-    borderFocus: TotoPalette.blue500,
+    borderFocus: TotoPalette.pitchVolt,
     specular: TotoPalette.specularDark,
     textPrimary: TotoPalette.ink900,
     textSecondary: TotoPalette.ink800,
     textTertiary: TotoPalette.ink700,
     textDisabled: TotoPalette.ink600,
-    textOnPrimary: Colors.white,
-    brand: TotoPalette.blue400,
-    brandFill: TotoPalette.blue600,
-    brandPressed: TotoPalette.blue700,
-    brandContainer: TotoPalette.blueTintDark,
+    textOnPrimary: TotoPalette.onVolt,
+    brand: TotoPalette.pitchVolt,
+    brandFill: TotoPalette.pitchVolt,
+    brandPressed: TotoPalette.pitchVoltPressed,
+    brandContainer: TotoPalette.pitchVoltTint,
     success: TotoPalette.green,
     successContainer: TotoPalette.greenTintDark,
     successBorder: TotoPalette.greenBorderDark,
@@ -234,20 +232,20 @@ class TotoColors extends ThemeExtension<TotoColors> {
     surfacePressed: TotoPalette.day200,
     borderSubtle: TotoPalette.day400,
     borderStrong: TotoPalette.day500,
-    borderFocus: TotoPalette.blue600,
+    borderFocus: TotoPalette.pitchDeep,
     specular: Color(0x00FFFFFF),
     textPrimary: TotoPalette.day900,
     textSecondary: TotoPalette.day800,
     textTertiary: TotoPalette.day700,
     textDisabled: TotoPalette.day600,
     textOnPrimary: Colors.white,
-    brand: TotoPalette.blue600,
-    brandFill: TotoPalette.blue600,
-    brandPressed: TotoPalette.blue700,
-    brandContainer: TotoPalette.blueTintLight,
+    brand: TotoPalette.pitchDeep,
+    brandFill: TotoPalette.pitchDeep,
+    brandPressed: TotoPalette.pitchDeepPressed,
+    brandContainer: TotoPalette.pitchDeepTint,
     success: TotoPalette.greenLight,
-    successContainer: Color(0xFFE3F7E8),
-    successBorder: Color(0xFFA8E4B8),
+    successContainer: Color(0xFFDDF5EE),
+    successBorder: Color(0xFF9EDCCB),
     danger: TotoPalette.redLight,
     dangerContainer: Color(0xFFFDE8E7),
     dangerBorder: Color(0xFFF5B8B4),
@@ -420,8 +418,8 @@ class TotoRadius {
   TotoRadius._();
   static const double xs = 6; // badge interno, chip minuscole
   static const double sm = 10; // input, segmented, chip valore
-  static const double md = 14; // riga lista, CTA a tutta larghezza
-  static const double lg = 20; // card primaria, top dei bottom sheet
+  static const double md = 16; // riga lista, CTA a tutta larghezza
+  static const double lg = 22; // card primaria, top dei bottom sheet
   static const double xl = 28; // card hero "giornata corrente"
   static const double full = 999; // pill, avatar
 
@@ -479,7 +477,7 @@ class TotoType {
   /// "ballano" a ogni tick.
   static TextStyle number(
     double size, {
-    FontWeight weight = FontWeight.w700,
+    FontWeight weight = FontWeight.w800,
     Color? color,
     bool display = true,
   }) {
@@ -523,9 +521,9 @@ class TotoType {
 
     return TextTheme(
       // ── Display (Archivo) — countdown, punti, posizione podio ─────────────
-      displayLarge: archivo(48, FontWeight.w700, -1.06, 1.00),
-      displayMedium: archivo(36, FontWeight.w700, -0.79, 1.05),
-      displaySmall: archivo(28, FontWeight.w700, -0.62, 1.10),
+      displayLarge: archivo(52, FontWeight.w800, -1.4, 1.00),
+      displayMedium: archivo(38, FontWeight.w800, -1.0, 1.05),
+      displaySmall: archivo(28, FontWeight.w800, -0.7, 1.10),
 
       // ── Headline / Title (Inter) ──────────────────────────────────────────
       headlineLarge: inter(28, FontWeight.w700, -0.62, 1.18),
@@ -680,9 +678,12 @@ class TotoTheme {
           backgroundColor: WidgetStateProperty.resolveWith((s) =>
               s.contains(WidgetState.pressed)
                   ? c.surfacePressed
-                  : c.neutralContainer),
-          foregroundColor: WidgetStatePropertyAll(c.textPrimary),
-          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)),
+                  : Colors.transparent),
+          foregroundColor: WidgetStatePropertyAll(c.brand),
+          // Larghezza minima finita: con Size.fromHeight (larghezza infinita)
+          // un TextButton dentro una Row (es. "Non hai un account?
+          // Registrati") rompeva il layout e la schermata restava vuota.
+          minimumSize: const WidgetStatePropertyAll(Size(64, 48)),
           textStyle: WidgetStatePropertyAll(text.labelLarge),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
@@ -848,8 +849,9 @@ class TotoTheme {
 
       switchTheme: SwitchThemeData(
         trackColor: WidgetStateProperty.resolveWith((s) =>
-            s.contains(WidgetState.selected) ? c.success : c.neutralContainer),
-        thumbColor: WidgetStatePropertyAll(c.textPrimary),
+            s.contains(WidgetState.selected) ? c.brandFill : c.neutralContainer),
+        thumbColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? c.textOnPrimary : c.textTertiary),
         trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),
 

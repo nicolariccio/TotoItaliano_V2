@@ -10,6 +10,9 @@ import 'package:go_router/go_router.dart';
 
 import '../core/routing/home_shell.dart';
 import '../core/routing/route_paths.dart';
+import '../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/register_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 import '../features/leaderboard/presentation/screens/leaderboard_screen.dart';
 import '../features/leagues/presentation/screens/league_create_screen.dart';
@@ -26,6 +29,15 @@ final Provider<GoRouter> previewRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: RoutePaths.home,
     routes: [
+      GoRoute(
+          path: RoutePaths.login,
+          builder: (context, state) => const LoginScreen()),
+      GoRoute(
+          path: RoutePaths.register,
+          builder: (context, state) => const RegisterScreen()),
+      GoRoute(
+          path: RoutePaths.forgotPassword,
+          builder: (context, state) => const ForgotPasswordScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             HomeShell(navigationShell: navigationShell),

@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/app_constants.dart';
 import 'shared_preferences_provider.dart';
 
-/// Preferenza di tema dell'utente, persistita localmente. Default
-/// [ThemeMode.system]: l'app segue il sistema finché l'utente non sceglie
-/// esplicitamente chiaro o scuro dal Profilo.
+/// Preferenza di tema dell'utente, persistita localmente. Default scuro
+/// ("Stadio di notte"): l'utente può passare ad Auto (sistema) o Chiaro dal
+/// Profilo in qualunque momento.
 class ThemeModeController extends StateNotifier<ThemeMode> {
   ThemeModeController(this._ref) : super(_load(_ref));
 
@@ -17,7 +17,7 @@ class ThemeModeController extends StateNotifier<ThemeMode> {
         ref.read(sharedPreferencesProvider).getString(AppConstants.prefsThemeMode);
     return ThemeMode.values.firstWhere(
       (mode) => mode.name == raw,
-      orElse: () => ThemeMode.system,
+      orElse: () => ThemeMode.dark,
     );
   }
 

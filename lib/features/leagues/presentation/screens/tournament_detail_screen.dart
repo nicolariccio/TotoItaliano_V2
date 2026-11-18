@@ -286,11 +286,11 @@ class _HighlanderBodyState extends ConsumerState<_HighlanderBody> {
                   onPressed:
                       _isProcessing ? null : () => _elaboraGiornata(active),
                   child: _isProcessing
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
+                              strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary))
                       : const Text('Elabora giornata'),
                 ),
               ),

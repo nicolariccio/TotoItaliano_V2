@@ -189,11 +189,11 @@ class _TournamentCreateScreenState
                   FilledButton(
                     onPressed: _isSaving ? null : () => _submit(members),
                     child: _isSaving
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary),
                           )
                         : const Text('Crea torneo'),
                   ),
