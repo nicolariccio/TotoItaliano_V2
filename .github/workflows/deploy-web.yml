@@ -1,0 +1,69 @@
+name: Deploy web su Firebase Hosting
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.0
+          cache: true
+
+      # lib/firebase_options.dart è gitignorato su questo branch: lo scrivo dal
+      # secret FIREBASE_OPTIONS_DART (contenuto del file generato da
+      # `flutterfire configure`). Senza il secret il build non può partire.
+      - name: Crea firebase_options.dart
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+        run: |
+          if [ -z "$FIREBASE_OPTIONS_DART" ]; then
+            echo "::error::Manca il secret FIREBASE_OPTIONS_DART (contenuto di lib/firebase_options.dart)."
+            exit 1
+          fi
+          printf '%s\n' "$FIREBASE_OPTIONS_DART" > lib/firebase_options.dart
+
+      - run: flutter pub get
+
+      # I *.freezed.dart sono gitignorati: vanno rigenerati in CI.
+      - run: dart run build_runner build
+
+      # Cancello qualità: se un test fallisce non si pubblica nulla.
+      - run: flutter test
+
+      - run: flutter build web --release
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: totoitaliano-aa72e
+          channelId: live
+
+      # Pubblica regole e indici Firestore con lo stesso service account.
+      # Richiede che il database Firestore esista già (console Firebase →
+      # Build → Firestore Database → Crea database) e che il service account
+      # abbia il ruolo "Firebase Rules Admin". Se manca qualcosa il sito resta
+      # comunque pubblicato: l'errore compare come warning nel log.
+      - name: Deploy regole Firestore
+        continue-on-error: true
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools@13 deploy --only firestore --project totoitaliano-aa72e --non-interactive \
+            || echo "::warning::Deploy regole Firestore fallito: controlla che il database esista e che il service account abbia il ruolo Firebase Rules Admin."
+          rm -f "$RUNNER_TEMP/sa.json"
