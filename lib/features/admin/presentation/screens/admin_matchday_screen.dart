@@ -111,10 +111,50 @@ class _MatchRow extends ConsumerWidget {
 
   final Match match;
 
+  Future<void> _setLive(
+      BuildContext context, WidgetRef ref, int home, int away) async {
+    try {
+      await ref.read(adminRepositoryProvider).setLiveScore(
+            match: match,
+            homeScore: home.clamp(0, 30),
+            awayScore: away.clamp(0, 30),
+          );
+      ref.invalidate(matchesForMatchdayProvider(match.matchdayId));
+    } catch (error) {
+      if (context.mounted) showFailureSnackBar(context, error);
+    }
+  }
+
+  Future<void> _finish(BuildContext context, WidgetRef ref) async {
+    final scores = await showDialog<(int, int)>(
+      context: context,
+      builder: (context) => _ResultDialog(match: match),
+    );
+    if (scores == null || !context.mounted) return;
+    try {
+      final scored =
+          await ref.read(adminRepositoryProvider).setMatchResultAndRecompute(
+                match: match,
+                homeScore: scores.$1,
+                awayScore: scores.$2,
+              );
+      ref.invalidate(matchesForMatchdayProvider(match.matchdayId));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Risultato salvato. $scored pronostici aggiornati.')));
+      }
+    } catch (error) {
+      if (context.mounted) showFailureSnackBar(context, error);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isFinished = match.status == MatchStatus.finished;
+    final isLive = match.status == MatchStatus.live;
+    final home = match.homeScore ?? 0;
+    final away = match.awayScore ?? 0;
 
     return TotoCard(
       child: Column(
@@ -129,6 +169,8 @@ class _MatchRow extends ConsumerWidget {
               if (isFinished)
                 Text('${match.homeScore} - ${match.awayScore}',
                     style: TotoType.number(18, display: false))
+              else if (isLive)
+                const TotoBadge.live()
               else
                 const TotoBadge('Da giocare',
                     tone: TotoBadgeTone.neutral, uppercase: false),
@@ -140,41 +182,94 @@ class _MatchRow extends ConsumerWidget {
             '${match.kickoff.hour.toString().padLeft(2, '0')}:${match.kickoff.minute.toString().padLeft(2, '0')}',
             style: theme.textTheme.bodySmall,
           ),
+          if (isLive) ...[
+            const SizedBox(height: TotoSpace.md),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _GoalCounter(
+                  label: match.homeTeam.shortName,
+                  value: home,
+                  onChanged: (v) => _setLive(context, ref, v, away),
+                ),
+                _GoalCounter(
+                  label: match.awayTeam.shortName,
+                  value: away,
+                  onChanged: (v) => _setLive(context, ref, home, v),
+                ),
+              ],
+            ),
+          ],
           if (!isFinished) ...[
-            const SizedBox(height: TotoSpace.sm),
-            Align(
-              alignment: Alignment.centerRight,
-              child: OutlinedButton(
-                onPressed: () async {
-                  final scores = await showDialog<(int, int)>(
-                    context: context,
-                    builder: (context) => _ResultDialog(match: match),
-                  );
-                  if (scores == null || !context.mounted) return;
-                  try {
-                    final scored = await ref
-                        .read(adminRepositoryProvider)
-                        .setMatchResultAndRecompute(
-                          match: match,
-                          homeScore: scores.$1,
-                          awayScore: scores.$2,
-                        );
-                    ref.invalidate(matchesForMatchdayProvider(match.matchdayId));
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              'Risultato salvato. $scored pronostici aggiornati.')));
-                    }
-                  } catch (error) {
-                    if (context.mounted) showFailureSnackBar(context, error);
-                  }
-                },
-                child: const Text('Inserisci risultato'),
-              ),
+            const SizedBox(height: TotoSpace.md),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (isLive)
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                        minimumSize: const Size(64, 44)),
+                    onPressed: () => _finish(context, ref),
+                    child: const Text('Termina partita'),
+                  )
+                else ...[
+                  TextButton(
+                    onPressed: () => _setLive(context, ref, 0, 0),
+                    child: const Text('Avvia live'),
+                  ),
+                  const SizedBox(width: TotoSpace.sm),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(64, 44)),
+                    onPressed: () => _finish(context, ref),
+                    child: const Text('Inserisci risultato'),
+                  ),
+                ],
+              ],
             ),
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Contatore gol con − e + per aggiornare il risultato live con un tocco.
+class _GoalCounter extends StatelessWidget {
+  const _GoalCounter(
+      {required this.label, required this.value, required this.onChanged});
+
+  final String label;
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: 'Togli un gol a $label',
+              icon: const Icon(Icons.remove_circle_outline_rounded),
+              onPressed: value > 0 ? () => onChanged(value - 1) : null,
+            ),
+            SizedBox(
+              width: 36,
+              child: Text('$value',
+                  textAlign: TextAlign.center,
+                  style: TotoType.number(28, display: false)),
+            ),
+            IconButton(
+              tooltip: 'Aggiungi un gol a $label',
+              icon: const Icon(Icons.add_circle_rounded),
+              onPressed: () => onChanged(value + 1),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -189,8 +284,10 @@ class _ResultDialog extends StatefulWidget {
 }
 
 class _ResultDialogState extends State<_ResultDialog> {
-  final _homeController = TextEditingController();
-  final _awayController = TextEditingController();
+  late final _homeController =
+      TextEditingController(text: widget.match.homeScore?.toString() ?? '');
+  late final _awayController =
+      TextEditingController(text: widget.match.awayScore?.toString() ?? '');
 
   @override
   void dispose() {

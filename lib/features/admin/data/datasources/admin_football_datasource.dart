@@ -155,6 +155,25 @@ class AdminFootballDatasource {
     );
   }
 
+  /// Aggiorna il risultato parziale di una partita in corso (e la porta in
+  /// stato `live` se non lo era già). Blocca i pronostici ma non scrive
+  /// `winner`/`goalNoGoal`/`overUnder`, che restano appannaggio del
+  /// risultato finale ([setMatchResult]). I client collegati allo stream
+  /// delle partite vedono subito i nuovi punti provvisori.
+  Future<void> setLiveScore({
+    required String matchId,
+    required int homeScore,
+    required int awayScore,
+  }) {
+    return _matches.doc(matchId).update({
+      'status': MatchStatus.live.name,
+      'homeScore': homeScore,
+      'awayScore': awayScore,
+      'predictionLocked': true,
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
+    });
+  }
+
   Map<String, dynamic> _teamToMap(Team team) => {
         'id': team.id,
         'name': team.name,

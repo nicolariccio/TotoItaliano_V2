@@ -4,6 +4,7 @@ import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/toto_widgets.dart';
 import '../../../../data/models/match.dart';
+import '../../../../data/scoring/scoring_breakdown.dart';
 import '../../domain/entities/prediction.dart';
 import '../controllers/schedina_controller.dart';
 import '../controllers/schedina_state.dart';
@@ -13,11 +14,15 @@ class SchedinaRow extends StatelessWidget {
       {super.key,
       required this.match,
       required this.pick,
-      required this.controller});
+      required this.controller,
+      this.live});
 
   final Match match;
   final PickState pick;
   final SchedinaController controller;
+
+  /// Punteggio provvisorio del pick, se la partita è in corso o finita.
+  final LivePickScore? live;
 
   static const _markets = [
     PredictionMarket.result1x2,
@@ -33,16 +38,29 @@ class SchedinaRow extends StatelessWidget {
     PredictionMarket.exactScore: 'Esatto',
   };
 
+  Color? _accent(TotoColors c) {
+    final l = live;
+    if (l != null) {
+      if (l.winningNow) return c.successBorder;
+      if (l.settled) return c.dangerBorder;
+    }
+    return pick.market != null && match.isPredictionOpen
+        ? c.brand.withValues(alpha: 0.45)
+        : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final c = context.c;
     final bool enabled = match.isPredictionOpen;
+    final bool isLive = match.status == MatchStatus.live;
+    final bool hasScore = (isLive || match.status == MatchStatus.finished) &&
+        match.homeScore != null &&
+        match.awayScore != null;
 
     return TotoCard(
-      accent: pick.market != null && enabled
-          ? c.brand.withValues(alpha: 0.45)
-          : null,
+      accent: _accent(c),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -57,14 +75,34 @@ class SchedinaRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: TotoSpace.sm),
-              Text(DateFormatter.matchKickoff(match.kickoff),
-                  style: theme.textTheme.bodySmall),
-              if (!enabled) ...[
+              if (hasScore)
+                Text(
+                  '${match.homeScore} - ${match.awayScore}',
+                  style: TotoType.number(20,
+                      display: false, color: isLive ? c.danger : c.textPrimary),
+                )
+              else
+                Text(DateFormatter.matchKickoff(match.kickoff),
+                    style: theme.textTheme.bodySmall),
+              if (!enabled && !hasScore) ...[
                 const SizedBox(width: TotoSpace.sm),
                 const TotoBadge.locked(),
               ],
             ],
           ),
+          if (hasScore) ...[
+            const SizedBox(height: TotoSpace.sm),
+            Row(
+              children: [
+                if (isLive)
+                  const TotoBadge.live()
+                else
+                  const TotoBadge.locked(),
+                const SizedBox(width: TotoSpace.sm),
+                if (live != null) _LivePointsBadge(live: live!),
+              ],
+            ),
+          ],
           const SizedBox(height: TotoSpace.md),
           Opacity(
             opacity: enabled ? 1 : 0.5,
@@ -89,6 +127,33 @@ class SchedinaRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Punti del pronostico con il risultato attuale: definitivi se l'esito non
+/// può più cambiare, altrimenti marcati come provvisori ("ora").
+class _LivePointsBadge extends StatelessWidget {
+  const _LivePointsBadge({required this.live});
+
+  final LivePickScore live;
+
+  @override
+  Widget build(BuildContext context) {
+    if (live.settled) {
+      return live.winningNow
+          ? TotoBadge.points(live.points)
+          : const TotoBadge('0',
+              tone: TotoBadgeTone.neutral,
+              icon: Icons.close_rounded,
+              uppercase: false);
+    }
+    return live.winningNow
+        ? TotoBadge('+${live.points} · ora',
+            tone: TotoBadgeTone.success,
+            icon: Icons.trending_up_rounded,
+            uppercase: false)
+        : const TotoBadge('0 · ora',
+            tone: TotoBadgeTone.neutral, uppercase: false);
   }
 }
 
