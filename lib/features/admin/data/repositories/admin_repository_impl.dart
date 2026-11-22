@@ -133,4 +133,22 @@ class AdminRepositoryImpl implements AdminRepository {
       throw AppExceptionMapper.map(error);
     }
   }
+
+  @override
+  Future<void> setLiveScore({
+    required Match match,
+    required int homeScore,
+    required int awayScore,
+  }) async {
+    try {
+      await _requireGlobalAdmin();
+      await _adminFootballDatasource.setLiveScore(
+        matchId: match.id,
+        homeScore: homeScore,
+        awayScore: awayScore,
+      );
+    } catch (error) {
+      throw AppExceptionMapper.map(error);
+    }
+  }
 }
