@@ -19,6 +19,14 @@ abstract class FootballDataService {
   Future<List<Match>> getMatches(
       {required String competitionId, String? matchdayId});
 
+  /// Partite osservabili in tempo reale. Di default emette una sola volta il
+  /// risultato di [getMatches]; le implementazioni con una sorgente reattiva
+  /// (Firestore) la sovrascrivono per propagare gol e cambi di stato.
+  Stream<List<Match>> watchMatches(
+          {required String competitionId, String? matchdayId}) =>
+      Stream.fromFuture(
+          getMatches(competitionId: competitionId, matchdayId: matchdayId));
+
   Future<Match?> getMatch(String matchId);
 
   Future<List<TeamStanding>> getStandings({required String competitionId});

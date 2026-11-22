@@ -54,6 +54,20 @@ class FirestoreFootballDataService implements FootballDataService {
   }
 
   @override
+  Stream<List<Match>> watchMatches(
+      {required String competitionId, String? matchdayId}) {
+    Query<Map<String, dynamic>> query = _firestore
+        .collection('matches')
+        .where('competitionId', isEqualTo: competitionId);
+    if (matchdayId != null) {
+      query = query.where('matchdayId', isEqualTo: matchdayId);
+    }
+    return query
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(_matchFromData).toList());
+  }
+
+  @override
   Future<Match?> getMatch(String matchId) async {
     final doc = await _firestore.collection('matches').doc(matchId).get();
     if (!doc.exists) return null;

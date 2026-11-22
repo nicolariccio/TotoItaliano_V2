@@ -69,6 +69,87 @@ class ScoringEngine {
     }
   }
 
+  /// Punteggio provvisorio sul risultato attuale (partita live o finita).
+  /// Ritorna `null` se la partita non è iniziata o manca il risultato.
+  static LivePickScore? calculateLive({
+    required Prediction prediction,
+    required Match match,
+    ScoringConfig config = const ScoringConfig(),
+  }) =>
+      calculateLivePick(
+        market: prediction.market,
+        result1x2Value: prediction.result1x2Value,
+        goalNoGoalValue: prediction.goalNoGoalValue,
+        overUnder25Value: prediction.overUnder25Value,
+        exactHomeScore: prediction.exactHomeScore,
+        exactAwayScore: prediction.exactAwayScore,
+        match: match,
+        config: config,
+      );
+
+  /// Come [calculateLive], ma sui valori grezzi del pick: serve alla
+  /// schedina in compilazione, dove non esiste ancora un `Prediction`.
+  static LivePickScore? calculateLivePick({
+    required PredictionMarket market,
+    String? result1x2Value,
+    bool? goalNoGoalValue,
+    bool? overUnder25Value,
+    int? exactHomeScore,
+    int? exactAwayScore,
+    required Match match,
+    ScoringConfig config = const ScoringConfig(),
+  }) {
+    final home = match.homeScore;
+    final away = match.awayScore;
+    final started = match.status == MatchStatus.live ||
+        match.status == MatchStatus.finished;
+    if (!started || home == null || away == null) return null;
+
+    final finished = match.status == MatchStatus.finished;
+    final total = home + away;
+    final bothScored = home > 0 && away > 0;
+
+    final bool winning;
+    final bool settled;
+    final int value;
+
+    switch (market) {
+      case PredictionMarket.exactScore:
+        winning = exactHomeScore == home && exactAwayScore == away;
+        // Un risultato esatto è già perso se un punteggio ha superato il pick.
+        final overshot =
+            (exactHomeScore ?? 0) < home || (exactAwayScore ?? 0) < away;
+        settled = finished || overshot;
+        value = config.exactScorePoints;
+
+      case PredictionMarket.result1x2:
+        final current = home > away ? '1' : (home < away ? '2' : 'X');
+        winning = result1x2Value == current;
+        settled = finished;
+        value = config.resultPoints;
+
+      case PredictionMarket.goalNoGoal:
+        final pick = goalNoGoalValue;
+        winning = pick != null && pick == bothScored;
+        settled = finished || bothScored;
+        value = config.goalNoGoalPoints;
+
+      case PredictionMarket.overUnder25:
+        final pick = overUnder25Value;
+        final over = total >= 3;
+        winning = pick != null && pick == over;
+        settled = finished || over;
+        value = config.overUnderPoints;
+    }
+
+    return LivePickScore(
+      market: market,
+      points: winning ? value : 0,
+      winningNow: winning,
+      settled: settled,
+    );
+  }
+
   static String? _winnerToResultCode(MatchWinner? winner) {
     switch (winner) {
       case MatchWinner.home:

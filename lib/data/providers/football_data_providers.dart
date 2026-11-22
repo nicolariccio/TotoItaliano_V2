@@ -50,14 +50,18 @@ final FutureProvider<Matchday> currentMatchdayProvider =
   );
 });
 
-final FutureProvider<List<Match>> currentMatchdayMatchesProvider =
-    FutureProvider<List<Match>>((ref) async {
+/// Partite della giornata corrente, aggiornate in tempo reale (gol e cambi
+/// di stato) quando la sorgente dati è reattiva.
+final StreamProvider<List<Match>> currentMatchdayMatchesProvider =
+    StreamProvider<List<Match>>((ref) async* {
   final competition = await ref.watch(activeCompetitionProvider.future);
   final matchday = await ref.watch(currentMatchdayProvider.future);
-  final matches = await ref
+  final stream = ref
       .watch(footballDataServiceProvider)
-      .getMatches(competitionId: competition.id, matchdayId: matchday.id);
-  return matches..sort((a, b) => a.kickoff.compareTo(b.kickoff));
+      .watchMatches(competitionId: competition.id, matchdayId: matchday.id);
+  await for (final matches in stream) {
+    yield [...matches]..sort((a, b) => a.kickoff.compareTo(b.kickoff));
+  }
 });
 
 final FutureProviderFamily<Match?, String> matchByIdProvider =

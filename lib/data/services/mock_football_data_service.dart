@@ -58,6 +58,12 @@ class MockFootballDataService implements FootballDataService {
   }
 
   @override
+  Stream<List<Match>> watchMatches(
+          {required String competitionId, String? matchdayId}) =>
+      Stream.fromFuture(
+          getMatches(competitionId: competitionId, matchdayId: matchdayId));
+
+  @override
   Future<Match?> getMatch(String matchId) {
     final match = _matches.where((m) => m.id == matchId).firstOrNull;
     return _respond(match);

@@ -4,6 +4,7 @@ import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/toto_widgets.dart';
 import '../../../../data/models/match.dart';
+import '../../../../data/scoring/scoring_breakdown.dart';
 import '../../domain/entities/prediction.dart';
 import '../controllers/schedina_controller.dart';
 import '../controllers/schedina_state.dart';
@@ -20,6 +21,7 @@ class SchedinaRow extends StatelessWidget {
     required this.controller,
     required this.expanded,
     required this.onToggle,
+    this.live,
   });
 
   final Match match;
@@ -27,6 +29,9 @@ class SchedinaRow extends StatelessWidget {
   final SchedinaController controller;
   final bool expanded;
   final VoidCallback onToggle;
+
+  /// Punteggio provvisorio del pick, se la partita è in corso o finita.
+  final LivePickScore? live;
 
   static const _markets = [
     PredictionMarket.result1x2,
@@ -42,12 +47,27 @@ class SchedinaRow extends StatelessWidget {
     PredictionMarket.exactScore: 'Esatto',
   };
 
+  Color? _accent(TotoColors c) {
+    final l = live;
+    if (l != null) {
+      if (l.winningNow) return c.successBorder;
+      if (l.settled) return c.dangerBorder;
+    }
+    return pick.market != null && match.isPredictionOpen
+        ? c.brand.withValues(alpha: 0.45)
+        : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final c = context.c;
     final bool enabled = match.isPredictionOpen;
     final bool done = pick.isComplete;
+    final bool hasScore = (match.status == MatchStatus.live ||
+            match.status == MatchStatus.finished) &&
+        match.homeScore != null &&
+        match.awayScore != null;
     final subtitle =
         '${DateFormatter.matchKickoffCompact(match.kickoff)} · ${match.homeTeam.stadium}';
 
@@ -55,16 +75,17 @@ class SchedinaRow extends StatelessWidget {
       duration: TotoMotion.base,
       curve: TotoMotion.standard,
       alignment: Alignment.topCenter,
-      child: _content(context, theme, c, enabled, done, subtitle),
+      child: _content(context, theme, c, enabled, done, hasScore, subtitle),
     );
   }
 
   Widget _content(BuildContext context, ThemeData theme, TotoColors c,
-      bool enabled, bool done, String subtitle) {
+      bool enabled, bool done, bool hasScore, String subtitle) {
     if (!expanded) {
       return Opacity(
-        opacity: enabled ? 1 : 0.6,
+        opacity: enabled || hasScore ? 1 : 0.6,
         child: TotoCard(
+          accent: _accent(c),
           radius: TotoRadius.md,
           padding: const EdgeInsets.symmetric(
               horizontal: TotoSpace.lg, vertical: TotoSpace.md),
@@ -86,7 +107,34 @@ class SchedinaRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: TotoSpace.sm),
-              if (!enabled)
+              if (hasScore)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (match.status == MatchStatus.live) ...[
+                          const TotoBadge.live(),
+                          const SizedBox(width: TotoSpace.sm),
+                        ],
+                        Text(
+                          '${match.homeScore} - ${match.awayScore}',
+                          style: TotoType.number(20,
+                              display: false,
+                              color: match.status == MatchStatus.live
+                                  ? c.danger
+                                  : c.textPrimary),
+                        ),
+                      ],
+                    ),
+                    if (live != null) ...[
+                      const SizedBox(height: TotoSpace.xs),
+                      _LivePointsBadge(live: live!),
+                    ],
+                  ],
+                )
+              else if (!enabled)
                 Icon(Icons.lock_outline_rounded, size: 16, color: c.textTertiary)
               else if (done)
                 const TotoBadge('Scelto',
@@ -151,6 +199,33 @@ class SchedinaRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Punti del pronostico con il risultato attuale: definitivi se l'esito non
+/// può più cambiare, altrimenti marcati come provvisori ("ora").
+class _LivePointsBadge extends StatelessWidget {
+  const _LivePointsBadge({required this.live});
+
+  final LivePickScore live;
+
+  @override
+  Widget build(BuildContext context) {
+    if (live.settled) {
+      return live.winningNow
+          ? TotoBadge.points(live.points)
+          : const TotoBadge('0',
+              tone: TotoBadgeTone.neutral,
+              icon: Icons.close_rounded,
+              uppercase: false);
+    }
+    return live.winningNow
+        ? TotoBadge('+${live.points} · ora',
+            tone: TotoBadgeTone.success,
+            icon: Icons.trending_up_rounded,
+            uppercase: false)
+        : const TotoBadge('0 · ora',
+            tone: TotoBadgeTone.neutral, uppercase: false);
   }
 }
 

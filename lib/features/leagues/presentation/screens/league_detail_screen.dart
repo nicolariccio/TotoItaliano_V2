@@ -13,11 +13,15 @@ import '../../../../core/widgets/toto_widgets.dart';
 import '../../../../data/models/league.dart';
 import '../../../../data/models/league_member.dart';
 import '../../../../data/models/league_tournament.dart';
+import '../../../../data/models/match.dart';
 import '../../../../data/models/scoring_config.dart';
+import '../../../../data/scoring/scoring_breakdown.dart';
+import '../../../../data/scoring/scoring_engine.dart';
 import '../../../../data/providers/football_data_providers.dart';
 import '../../../auth/presentation/providers/current_user_provider.dart';
 import '../../../predictions/presentation/controllers/schedina_controller.dart';
 import '../../../predictions/presentation/controllers/schedina_state.dart';
+import '../../../predictions/presentation/widgets/live_score_summary.dart';
 import '../../../predictions/presentation/widgets/schedina_row.dart';
 import '../providers/league_providers.dart';
 import '../providers/tournament_providers.dart';
@@ -358,6 +362,35 @@ class _SchedinaTabState extends ConsumerState<_SchedinaTab> {
       );
     }
 
+    final config = ref.watch(leagueByIdProvider(leagueId)).valueOrNull
+            ?.scoringConfig ??
+        const ScoringConfig();
+    final liveScores = <String, LivePickScore>{};
+    var livePoints = 0, pendingPoints = 0, liveCount = 0, settledCount = 0;
+    for (final match in matches) {
+      final pick = schedina.picks[match.id];
+      if (pick == null || !pick.isComplete) continue;
+      final score = ScoringEngine.calculateLivePick(
+        market: pick.market!,
+        result1x2Value: pick.result1x2Value,
+        goalNoGoalValue: pick.goalNoGoalValue,
+        overUnder25Value: pick.overUnder25Value,
+        exactHomeScore: pick.exactHomeScore,
+        exactAwayScore: pick.exactAwayScore,
+        match: match,
+        config: config,
+      );
+      if (score == null) continue;
+      liveScores[match.id] = score;
+      livePoints += score.points;
+      if (match.status == MatchStatus.live) {
+        liveCount++;
+        pendingPoints += score.settled ? 0 : score.points;
+      } else {
+        settledCount++;
+      }
+    }
+
     final openMatchesCount = matches.where((m) => m.isPredictionOpen).length;
     final bool canSave = openMatchesCount > 0 && !schedina.isSaving;
     final double progress =
@@ -387,6 +420,17 @@ class _SchedinaTabState extends ConsumerState<_SchedinaTab> {
             ],
           ),
         ),
+        if (liveScores.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                TotoSpace.lg, TotoSpace.sm, TotoSpace.lg, TotoSpace.xs),
+            child: LiveScoreSummary(
+              points: livePoints,
+              liveCount: liveCount,
+              settledCount: settledCount,
+              pendingPoints: pendingPoints,
+            ),
+          ),
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(
@@ -401,6 +445,7 @@ class _SchedinaTabState extends ConsumerState<_SchedinaTab> {
                 match: match,
                 pick: pick,
                 controller: controller,
+                live: liveScores[match.id],
                 expanded: _expandedMatchId == match.id,
                 onToggle: () => setState(() {
                   _expandedMatchId =
