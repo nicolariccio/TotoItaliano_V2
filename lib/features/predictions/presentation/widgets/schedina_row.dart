@@ -40,6 +40,9 @@ class SchedinaRow extends StatelessWidget {
     final bool enabled = match.isPredictionOpen;
 
     return TotoCard(
+      accent: pick.market != null && enabled
+          ? c.brand.withValues(alpha: 0.45)
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -49,14 +52,16 @@ class SchedinaRow extends StatelessWidget {
                 child: Text(
                   '${match.homeTeam.shortName} - ${match.awayTeam.shortName}',
                   style: theme.textTheme.titleSmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: TotoSpace.sm),
               Text(DateFormatter.matchKickoff(match.kickoff),
                   style: theme.textTheme.bodySmall),
               if (!enabled) ...[
                 const SizedBox(width: TotoSpace.sm),
-                Icon(Icons.lock_outline_rounded,
-                    size: 16, color: c.textTertiary),
+                const TotoBadge.locked(),
               ],
             ],
           ),

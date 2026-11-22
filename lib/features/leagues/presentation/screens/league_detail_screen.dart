@@ -56,13 +56,15 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
 
           final c = context.c;
           final currentUserId = ref.watch(currentUserProvider).valueOrNull?.id;
-          final isOwner = currentUserId != null && currentUserId == league.ownerId;
+          final isOwner =
+              currentUserId != null && currentUserId == league.ownerId;
           final tabs = [
             _LeagueTab.classifica,
             _LeagueTab.schedina,
             if (isOwner) _LeagueTab.gestione,
           ];
-          final effectiveTab = tabs.contains(_tab) ? _tab : _LeagueTab.classifica;
+          final effectiveTab =
+              tabs.contains(_tab) ? _tab : _LeagueTab.classifica;
 
           return Column(
             children: [
@@ -136,8 +138,10 @@ class _LeagueDetailScreenState extends ConsumerState<LeagueDetailScreen> {
               ),
               Expanded(
                 child: switch (effectiveTab) {
-                  _LeagueTab.classifica => _ClassificaTab(leagueId: widget.leagueId),
-                  _LeagueTab.schedina => _SchedinaTab(leagueId: widget.leagueId),
+                  _LeagueTab.classifica =>
+                    _ClassificaTab(leagueId: widget.leagueId),
+                  _LeagueTab.schedina =>
+                    _SchedinaTab(leagueId: widget.leagueId),
                   _LeagueTab.gestione => _GestioneTab(league: league),
                 },
               ),
@@ -283,8 +287,8 @@ class _SchedinaTab extends ConsumerWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(TotoSpace.lg, TotoSpace.xs,
-              TotoSpace.lg, TotoSpace.navClearance),
+          padding: const EdgeInsets.fromLTRB(
+              TotoSpace.lg, TotoSpace.xs, TotoSpace.lg, TotoSpace.navClearance),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -301,12 +305,7 @@ class _SchedinaTab extends ConsumerWidget {
               FilledButton(
                 onPressed: canSave ? () => controller.save(matches) : null,
                 child: schedina.isSaving
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: c.textOnPrimary),
-                      )
+                    ? const TotoButtonSpinner()
                     : const Text('Salva schedina'),
               ),
             ],
@@ -446,7 +445,9 @@ class _ScoringStepper extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: TotoSpace.xxs),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyMedium)),
+          Expanded(
+              child:
+                  Text(label, style: Theme.of(context).textTheme.bodyMedium)),
           IconButton(
             icon: const Icon(Icons.remove_circle_outline_rounded),
             onPressed: value > 0 ? () => onChanged(value - 1) : null,
@@ -513,7 +514,8 @@ class _MatchdaySelectionCard extends ConsumerWidget {
           for (final match in matches)
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text('${match.homeTeam.shortName} - ${match.awayTeam.shortName}',
+              title: Text(
+                  '${match.homeTeam.shortName} - ${match.awayTeam.shortName}',
                   style: Theme.of(context).textTheme.bodyMedium),
               value: !excluded.contains(match.id),
               onChanged: (include) => toggle(match.id, include),
@@ -536,7 +538,8 @@ class _MemberManagementList extends ConsumerWidget {
 
     return membersAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => const Text('Non è stato possibile caricare i membri.'),
+      error: (error, stackTrace) =>
+          const Text('Non è stato possibile caricare i membri.'),
       data: (members) => Column(
         children: [
           for (final member in members)

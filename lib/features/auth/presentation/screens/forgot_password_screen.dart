@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/utils/error_snackbar.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/toto_widgets.dart';
 import '../controllers/forgot_password_controller.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
@@ -46,16 +48,33 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Password dimenticata')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+      body: TotoFormScaffoldBody(
+        child: AnimatedSwitcher(
+          duration: TotoMotion.base,
           child: _sent
               ? Column(
-                  mainAxisSize: MainAxisSize.min,
+                  key: const ValueKey('sent'),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(Icons.mark_email_read_rounded,
-                        size: 48, color: Colors.green),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: TotoSpace.x3l),
+                    Center(
+                      child: Container(
+                        width: 88,
+                        height: 88,
+                        decoration: BoxDecoration(
+                          color: context.c.successContainer,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: context.c.successBorder),
+                        ),
+                        child: Icon(Icons.mark_email_read_rounded,
+                            size: 40, color: context.c.success),
+                      ),
+                    ),
+                    const SizedBox(height: TotoSpace.xxl),
+                    Text('Controlla la tua email',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall),
+                    const SizedBox(height: TotoSpace.sm),
                     Text(
                       'Ti abbiamo inviato un\'email con le istruzioni per reimpostare la password.',
                       textAlign: TextAlign.center,
@@ -66,29 +85,28 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               : Form(
                   key: _formKey,
                   child: Column(
+                    key: const ValueKey('form'),
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        'Inserisci la tua email: ti invieremo un link per reimpostare la password.',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      const TotoScreenHeader(
+                        icon: Icons.lock_reset_rounded,
+                        title: 'Reimposta password',
+                        subtitle:
+                            'Inserisci la tua email: ti invieremo un link per reimpostare la password.',
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: TotoSpace.xxl),
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
                         decoration: const InputDecoration(labelText: 'Email'),
                         validator: Validators.email,
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: TotoSpace.xxl),
                       FilledButton(
                         onPressed: isLoading ? null : _submit,
                         child: isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
-                              )
+                            ? const TotoButtonSpinner()
                             : const Text('Invia'),
                       ),
                     ],

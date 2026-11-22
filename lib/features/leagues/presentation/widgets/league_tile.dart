@@ -31,14 +31,21 @@ class LeagueTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(league.name, style: theme.textTheme.titleSmall),
+                Text(league.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall),
                 const SizedBox(height: TotoSpace.xxs),
-                Text('${league.memberCount} membri',
+                Text(
+                    league.memberCount == 1
+                        ? '1 membro'
+                        : '${league.memberCount} membri',
                     style: theme.textTheme.bodySmall),
               ],
             ),
           ),
-          TotoBadge(league.inviteCode, tone: TotoBadgeTone.brand, uppercase: false),
+          TotoBadge(league.inviteCode,
+              tone: TotoBadgeTone.brand, uppercase: false),
           const SizedBox(width: TotoSpace.xs),
           Icon(Icons.chevron_right_rounded, color: c.textTertiary),
         ],

@@ -21,7 +21,7 @@ class LeaguesScreen extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                TotoSpace.lg, TotoSpace.md, TotoSpace.lg, TotoSpace.sm),
+                TotoSpace.lg, TotoSpace.sm, TotoSpace.lg, TotoSpace.md),
             child: Row(
               children: [
                 Expanded(
