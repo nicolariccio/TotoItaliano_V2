@@ -197,6 +197,12 @@ class ApiFootballDataService implements FootballDataService {
   }
 
   @override
+  Stream<List<Match>> watchMatches(
+          {required String competitionId, String? matchdayId}) =>
+      Stream.fromFuture(
+          getMatches(competitionId: competitionId, matchdayId: matchdayId));
+
+  @override
   Future<Match?> getMatch(String matchId) async {
     final fixtures = await _fixtures();
     final grouped = _groupByRound(fixtures);
