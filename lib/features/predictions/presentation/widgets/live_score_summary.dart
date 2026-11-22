@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/widgets/toto_widgets.dart';
+import '../../../../data/scoring/scoring_breakdown.dart';
 
 /// Riepilogo dei punti della schedina in tempo reale: somma dei punti
 /// provvisori delle partite in corso e di quelle già concluse.
@@ -85,5 +86,32 @@ class LiveScoreSummary extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Punti del pronostico con il risultato attuale: definitivi se l'esito non
+/// può più cambiare, altrimenti marcati come provvisori ("ora").
+class LivePointsBadge extends StatelessWidget {
+  const LivePointsBadge({super.key, required this.live});
+
+  final LivePickScore live;
+
+  @override
+  Widget build(BuildContext context) {
+    if (live.settled) {
+      return live.winningNow
+          ? TotoBadge.points(live.points)
+          : const TotoBadge('0',
+              tone: TotoBadgeTone.neutral,
+              icon: Icons.close_rounded,
+              uppercase: false);
+    }
+    return live.winningNow
+        ? TotoBadge('+${live.points} · ora',
+            tone: TotoBadgeTone.success,
+            icon: Icons.trending_up_rounded,
+            uppercase: false)
+        : const TotoBadge('0 · ora',
+            tone: TotoBadgeTone.neutral, uppercase: false);
   }
 }

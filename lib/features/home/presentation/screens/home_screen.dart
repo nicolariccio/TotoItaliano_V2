@@ -12,12 +12,16 @@ import '../../../../core/widgets/toto_widgets.dart';
 import '../../../../data/models/league.dart';
 import '../../../../data/models/match.dart';
 import '../../../../data/models/matchday.dart';
+import '../../../../data/models/scoring_config.dart';
+import '../../../../data/scoring/scoring_breakdown.dart';
+import '../../../../data/scoring/scoring_engine.dart';
 import '../../../../data/providers/football_data_providers.dart';
 import '../../../auth/presentation/providers/current_user_provider.dart';
 import '../../../leagues/presentation/providers/league_providers.dart';
 import '../../../leagues/presentation/widgets/league_tile.dart';
 import '../../../predictions/presentation/controllers/schedina_controller.dart';
 import '../../../predictions/presentation/controllers/schedina_state.dart';
+import '../../../predictions/presentation/widgets/live_score_summary.dart';
 
 /// Home = punto d'ingresso sulle leghe dell'utente: si entra in una lega
 /// per vederne la classifica e compilare la sua schedina (indipendente
@@ -47,9 +51,11 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.sports_soccer_rounded, color: c.brand, size: 26),
+                      Icon(Icons.sports_soccer_rounded,
+                          color: c.brand, size: 26),
                       const SizedBox(width: TotoSpace.sm),
-                      Text(AppConstants.appName, style: theme.textTheme.titleLarge),
+                      Text(AppConstants.appName,
+                          style: theme.textTheme.titleLarge),
                     ],
                   ),
                   Row(
@@ -102,7 +108,8 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           const SizedBox(width: TotoSpace.md),
                           OutlinedButton(
-                            onPressed: () => context.push(RoutePaths.leagueJoin),
+                            onPressed: () =>
+                                context.push(RoutePaths.leagueJoin),
                             child: const Text('Entra in lega'),
                           ),
                         ],
@@ -187,7 +194,8 @@ class _HomeHero extends ConsumerWidget {
               ?.excludedMatchIds
               .toSet() ??
           const <String>{};
-      final relevant = allMatches.where((m) => !excluded.contains(m.id)).toList();
+      final relevant =
+          allMatches.where((m) => !excluded.contains(m.id)).toList();
       if (relevant.isEmpty) continue;
 
       final schedina = ref.watch(schedinaControllerProvider(league.id));
@@ -226,7 +234,31 @@ class _HomeHeroCard extends StatelessWidget {
     final isClosed = closesIn.isNegative;
     final isClosing = !isClosed && closesIn.inMinutes <= 120;
 
-    final preview = progress.matches.take(5).toList();
+    // Le partite in corso passano davanti: sono quelle che interessano ora.
+    final liveMatches =
+        progress.matches.where((m) => m.status == MatchStatus.live).toList();
+    final preview = [
+      ...liveMatches,
+      ...progress.matches.where((m) => m.status != MatchStatus.live),
+    ].take(5).toList();
+    final isLive = liveMatches.isNotEmpty;
+    final config = progress.league.scoringConfig ?? const ScoringConfig();
+
+    // Punteggio provvisorio di tutte le partite iniziate con un pronostico.
+    var livePoints = 0, pendingPoints = 0, liveCount = 0, settledCount = 0;
+    for (final match in progress.matches) {
+      final pick = progress.picks[match.id];
+      if (pick == null || !pick.isComplete) continue;
+      final score = _liveScoreFor(match, pick, config);
+      if (score == null) continue;
+      livePoints += score.points;
+      if (match.status == MatchStatus.live) {
+        liveCount++;
+        if (!score.settled) pendingPoints += score.points;
+      } else {
+        settledCount++;
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -243,15 +275,20 @@ class _HomeHeroCard extends StatelessWidget {
                 children: [
                   Text('GIORNATA ${matchday.number}',
                       style: theme.textTheme.labelSmall),
-                  TotoBadge(
-                    isClosed ? 'Chiusa' : (isClosing ? 'In chiusura' : 'Aperta'),
-                    tone: isClosed
-                        ? TotoBadgeTone.neutral
-                        : (isClosing
-                            ? TotoBadgeTone.warning
-                            : TotoBadgeTone.brand),
-                    icon: isClosed ? Icons.lock_rounded : null,
-                  ),
+                  if (isLive)
+                    const TotoBadge.live()
+                  else
+                    TotoBadge(
+                      isClosed
+                          ? 'Chiusa'
+                          : (isClosing ? 'In chiusura' : 'Aperta'),
+                      tone: isClosed
+                          ? TotoBadgeTone.neutral
+                          : (isClosing
+                              ? TotoBadgeTone.warning
+                              : TotoBadgeTone.brand),
+                      icon: isClosed ? Icons.lock_rounded : null,
+                    ),
                 ],
               ),
               const SizedBox(height: TotoSpace.lg),
@@ -303,6 +340,15 @@ class _HomeHeroCard extends StatelessWidget {
             ],
           ),
         ),
+        if (liveCount + settledCount > 0) ...[
+          const SizedBox(height: TotoSpace.lg),
+          LiveScoreSummary(
+            points: livePoints,
+            liveCount: liveCount,
+            settledCount: settledCount,
+            pendingPoints: pendingPoints,
+          ),
+        ],
         const SizedBox(height: TotoSpace.lg),
         for (final match in preview)
           Padding(
@@ -310,6 +356,7 @@ class _HomeHeroCard extends StatelessWidget {
             child: _HeroMatchRow(
               match: match,
               pick: progress.picks[match.id],
+              live: _liveScoreFor(match, progress.picks[match.id], config),
               onTap: () => context.push(
                 RoutePaths.leagueDetailPath(progress.league.id),
                 extra: 'schedina',
@@ -385,17 +432,41 @@ class _LeaguePositionRow extends ConsumerWidget {
   }
 }
 
+/// Punteggio provvisorio del pick su [match], o `null` se la partita non è
+/// iniziata o non c'è un pronostico completo.
+LivePickScore? _liveScoreFor(
+    Match match, PickState? pick, ScoringConfig config) {
+  if (pick == null || !pick.isComplete) return null;
+  return ScoringEngine.calculateLivePick(
+    market: pick.market!,
+    result1x2Value: pick.result1x2Value,
+    goalNoGoalValue: pick.goalNoGoalValue,
+    overUnder25Value: pick.overUnder25Value,
+    exactHomeScore: pick.exactHomeScore,
+    exactAwayScore: pick.exactAwayScore,
+    match: match,
+    config: config,
+  );
+}
+
 class _HeroMatchRow extends StatelessWidget {
-  const _HeroMatchRow({required this.match, required this.pick, this.onTap});
+  const _HeroMatchRow(
+      {required this.match, required this.pick, this.live, this.onTap});
 
   final Match match;
   final PickState? pick;
+  final LivePickScore? live;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final c = context.c;
     final done = pick?.isComplete ?? false;
+    final isLive = match.status == MatchStatus.live;
+    final hasScore = (isLive || match.status == MatchStatus.finished) &&
+        match.homeScore != null &&
+        match.awayScore != null;
 
     return TotoCard(
       radius: TotoRadius.md,
@@ -423,13 +494,38 @@ class _HeroMatchRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: TotoSpace.sm),
-          if (done)
-              const TotoBadge('Scelto',
-                  tone: TotoBadgeTone.brand,
-                  icon: Icons.check_rounded,
-                  uppercase: false)
-            else
-              const TotoDashedChip('Scegli'),
+          if (hasScore)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isLive) ...[
+                      const TotoBadge.live(),
+                      const SizedBox(width: TotoSpace.sm),
+                    ],
+                    Text(
+                      '${match.homeScore} - ${match.awayScore}',
+                      style: TotoType.number(20,
+                          display: false,
+                          color: isLive ? c.danger : c.textPrimary),
+                    ),
+                  ],
+                ),
+                if (live != null) ...[
+                  const SizedBox(height: TotoSpace.xs),
+                  LivePointsBadge(live: live!),
+                ],
+              ],
+            )
+          else if (done)
+            const TotoBadge('Scelto',
+                tone: TotoBadgeTone.brand,
+                icon: Icons.check_rounded,
+                uppercase: false)
+          else
+            const TotoDashedChip('Scegli'),
         ],
       ),
     );
