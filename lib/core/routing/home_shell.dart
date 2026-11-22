@@ -1,7 +1,7 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import '../widgets/toto_widgets.dart';
 
 /// Scaffold persistente con bottom navigation a 4 sezioni. Ogni branch di
 /// [StatefulShellRoute] mantiene il proprio stack di navigazione, cosi'
@@ -39,27 +39,20 @@ class HomeShell extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       body: navigationShell,
-      // Sfondo sfocato dietro la nav bar (effetto "glass" delle app native
-      // minimal), il colore semi-trasparente arriva dal navigationBarTheme.
-      bottomNavigationBar: ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: NavigationBar(
-            selectedIndex: navigationShell.currentIndex,
-            onDestinationSelected: (index) => navigationShell.goBranch(
-              index,
-              initialLocation: index == navigationShell.currentIndex,
-            ),
-            destinations: [
-              for (final item in _items)
-                NavigationDestination(
-                  icon: Icon(item.icon),
-                  selectedIcon: Icon(item.selectedIcon),
-                  label: item.label,
-                ),
-            ],
-          ),
+      bottomNavigationBar: TotoGlassNav(
+        index: navigationShell.currentIndex,
+        onChanged: (index) => navigationShell.goBranch(
+          index,
+          initialLocation: index == navigationShell.currentIndex,
         ),
+        destinations: [
+          for (final item in _items)
+            NavigationDestination(
+              icon: Icon(item.icon),
+              selectedIcon: Icon(item.selectedIcon),
+              label: item.label,
+            ),
+        ],
       ),
     );
   }

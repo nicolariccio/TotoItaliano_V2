@@ -465,7 +465,8 @@ class TotoSegmented<T> extends StatelessWidget {
                           onTap: () => onChanged(v),
                           child: Center(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
                               child: AnimatedDefaultTextStyle(
                                 duration: TotoMotion.fast,
                                 style: Theme.of(context)
@@ -918,6 +919,124 @@ class TotoEmptyState extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  9. COMPONENTI DI SCHERMATA CONDIVISI
+// ═════════════════════════════════════════════════════════════════════════════
+
+/// Spinner compatto per i pulsanti in caricamento.
+class TotoButtonSpinner extends StatelessWidget {
+  const TotoButtonSpinner({super.key, this.color});
+
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 20,
+      height: 20,
+      child: CircularProgressIndicator(
+        strokeWidth: 2.2,
+        color: color ?? context.c.textOnPrimary,
+      ),
+    );
+  }
+}
+
+/// Intestazione di schermata (form, auth): titolo + sottotitolo opzionale.
+class TotoScreenHeader extends StatelessWidget {
+  const TotoScreenHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.icon,
+  });
+
+  final String title;
+  final String? subtitle;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final t = context.t;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (icon != null) ...[
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: c.brandContainer,
+              borderRadius: BorderRadius.circular(TotoRadius.md),
+              border: Border.all(color: c.brand.withValues(alpha: 0.30)),
+            ),
+            child: Icon(icon, color: c.brand, size: 28),
+          ),
+          const SizedBox(height: TotoSpace.xl),
+        ],
+        Text(title, style: t.headlineLarge),
+        if (subtitle != null) ...[
+          const SizedBox(height: TotoSpace.sm),
+          Text(subtitle!, style: t.bodyLarge?.copyWith(color: c.textSecondary)),
+        ],
+      ],
+    );
+  }
+}
+
+/// Etichetta di sezione in maiuscolo sopra una lista o un gruppo.
+class TotoSectionLabel extends StatelessWidget {
+  const TotoSectionLabel(this.label, {super.key, this.trailing});
+
+  final String label;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: TotoSpace.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(label.toUpperCase(), style: context.t.labelSmall),
+            ),
+          ),
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+  }
+}
+
+/// Contenitore scrollabile per i form: padding uniforme, larghezza massima
+/// leggibile su tablet/web e chiusura tastiera al drag.
+class TotoFormScaffoldBody extends StatelessWidget {
+  const TotoFormScaffoldBody({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(
+                TotoSpace.xl, TotoSpace.lg, TotoSpace.xl, TotoSpace.x3l),
+            child: child,
+          ),
+        ),
+      ),
     );
   }
 }

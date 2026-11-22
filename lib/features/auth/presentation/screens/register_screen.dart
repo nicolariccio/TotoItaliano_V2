@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/toto_theme.dart';
 import '../../../../core/utils/error_snackbar.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/toto_widgets.dart';
 import '../controllers/register_controller.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -61,102 +63,108 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Crea account')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _firstNameController,
-                        decoration: const InputDecoration(labelText: 'Nome'),
-                        validator: (v) => Validators.required(v, field: 'Nome'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _lastNameController,
-                        decoration: const InputDecoration(labelText: 'Cognome'),
-                        validator: (v) =>
-                            Validators.required(v, field: 'Cognome'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(labelText: 'Username'),
-                  validator: Validators.username,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  validator: Validators.email,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword
-                          ? Icons.visibility_off_rounded
-                          : Icons.visibility_rounded),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
+      body: TotoFormScaffoldBody(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const TotoScreenHeader(
+                title: 'Unisciti a Toto',
+                subtitle: 'Crea il tuo account e sfida i tuoi amici.',
+              ),
+              const SizedBox(height: TotoSpace.xxl),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _firstNameController,
+                      decoration: const InputDecoration(labelText: 'Nome'),
+                      validator: (v) => Validators.required(v, field: 'Nome'),
                     ),
                   ),
-                  validator: Validators.password,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirm,
-                  decoration: InputDecoration(
-                    labelText: 'Conferma password',
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscureConfirm
-                          ? Icons.visibility_off_rounded
-                          : Icons.visibility_rounded),
-                      onPressed: () =>
-                          setState(() => _obscureConfirm = !_obscureConfirm),
+                  const SizedBox(width: TotoSpace.md),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _lastNameController,
+                      decoration: const InputDecoration(labelText: 'Cognome'),
+                      validator: (v) =>
+                          Validators.required(v, field: 'Cognome'),
                     ),
                   ),
-                  validator: (v) =>
-                      Validators.confirmPassword(v, _passwordController.text),
+                ],
+              ),
+              const SizedBox(height: TotoSpace.lg),
+              TextFormField(
+                controller: _usernameController,
+                decoration: const InputDecoration(labelText: 'Username'),
+                validator: Validators.username,
+              ),
+              const SizedBox(height: TotoSpace.lg),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Email'),
+                validator: Validators.email,
+              ),
+              const SizedBox(height: TotoSpace.lg),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                autofillHints: const [AutofillHints.newPassword],
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  suffixIcon: IconButton(
+                    tooltip: _obscurePassword
+                        ? 'Mostra password'
+                        : 'Nascondi password',
+                    icon: Icon(_obscurePassword
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _referralController,
-                  decoration: const InputDecoration(
-                      labelText: 'Codice referral (opzionale)'),
+                validator: Validators.password,
+              ),
+              const SizedBox(height: TotoSpace.lg),
+              TextFormField(
+                controller: _confirmPasswordController,
+                obscureText: _obscureConfirm,
+                decoration: InputDecoration(
+                  labelText: 'Conferma password',
+                  suffixIcon: IconButton(
+                    tooltip: _obscureConfirm
+                        ? 'Mostra password'
+                        : 'Nascondi password',
+                    icon: Icon(_obscureConfirm
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded),
+                    onPressed: () =>
+                        setState(() => _obscureConfirm = !_obscureConfirm),
+                  ),
                 ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: isLoading ? null : _submit,
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Registrati'),
-                ),
-                const SizedBox(height: 12),
-              ],
-            ),
+                validator: (v) =>
+                    Validators.confirmPassword(v, _passwordController.text),
+              ),
+              const SizedBox(height: TotoSpace.lg),
+              TextFormField(
+                controller: _referralController,
+                decoration: const InputDecoration(
+                    labelText: 'Codice referral (opzionale)'),
+              ),
+              const SizedBox(height: TotoSpace.xxl),
+              FilledButton(
+                onPressed: isLoading ? null : _submit,
+                child: isLoading
+                    ? const TotoButtonSpinner()
+                    : const Text('Registrati'),
+              ),
+              const SizedBox(height: TotoSpace.md),
+            ],
           ),
         ),
       ),

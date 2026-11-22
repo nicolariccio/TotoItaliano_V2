@@ -33,39 +33,60 @@ class HomeScreen extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  TotoSpace.lg, TotoSpace.lg, TotoSpace.lg, TotoSpace.sm),
+                  TotoSpace.xl, TotoSpace.lg, TotoSpace.lg, TotoSpace.md),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.sports_soccer_rounded, color: c.brand, size: 26),
-                      const SizedBox(width: TotoSpace.sm),
-                      Text(AppConstants.appName, style: theme.textTheme.titleLarge),
-                    ],
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: c.brandContainer,
+                      borderRadius: BorderRadius.circular(TotoRadius.sm),
+                    ),
+                    child: Icon(Icons.sports_soccer_rounded,
+                        color: c.brand, size: 22),
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.notifications_outlined),
-                        tooltip: 'Notifiche',
-                        onPressed: () {},
-                      ),
-                      PressScale(
-                        onTap: () => context.go(RoutePaths.profile),
-                        child: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: c.brandFill,
-                          child: Text(
-                            userAsync.value?.username.isNotEmpty == true
-                                ? userAsync.value!.username[0].toUpperCase()
-                                : '?',
-                            style: theme.textTheme.labelSmall
-                                ?.copyWith(color: c.textOnPrimary),
+                  const SizedBox(width: TotoSpace.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userAsync.value?.username.isNotEmpty == true
+                              ? 'Ciao, ${userAsync.value!.username}'
+                              : AppConstants.appName,
+                          style: theme.textTheme.titleMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text('Pronto per la giornata?',
+                            style: theme.textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                  Semantics(
+                    button: true,
+                    label: 'Profilo',
+                    child: PressScale(
+                      onTap: () => context.go(RoutePaths.profile),
+                      child: SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Center(
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundColor: c.brandFill,
+                            child: Text(
+                              userAsync.value?.username.isNotEmpty == true
+                                  ? userAsync.value!.username[0].toUpperCase()
+                                  : '?',
+                              style: theme.textTheme.labelLarge
+                                  ?.copyWith(color: c.textOnPrimary),
+                            ),
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -84,20 +105,25 @@ class HomeScreen extends ConsumerWidget {
                       title: 'Nessuna lega ancora',
                       subtitle:
                           'Crea una lega privata o entra con un invite code per iniziare a pronosticare con i tuoi amici.',
-                      action: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          FilledButton(
-                            onPressed: () =>
-                                context.push(RoutePaths.leagueCreate),
-                            child: const Text('Crea lega'),
-                          ),
-                          const SizedBox(width: TotoSpace.md),
-                          OutlinedButton(
-                            onPressed: () => context.push(RoutePaths.leagueJoin),
-                            child: const Text('Entra in lega'),
-                          ),
-                        ],
+                      action: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 320),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            FilledButton(
+                              onPressed: () =>
+                                  context.push(RoutePaths.leagueCreate),
+                              child: const Text('Crea lega'),
+                            ),
+                            const SizedBox(height: TotoSpace.md),
+                            OutlinedButton(
+                              onPressed: () =>
+                                  context.push(RoutePaths.leagueJoin),
+                              child: const Text('Entra in lega'),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   }
@@ -105,8 +131,13 @@ class HomeScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(TotoSpace.lg,
                         TotoSpace.sm, TotoSpace.lg, TotoSpace.navClearance),
                     children: [
-                      Text('LE TUE LEGHE', style: theme.textTheme.labelSmall),
-                      const SizedBox(height: TotoSpace.md),
+                      TotoSectionLabel(
+                        'Le tue leghe',
+                        trailing: TextButton(
+                          onPressed: () => context.push(RoutePaths.leagueJoin),
+                          child: const Text('Entra con codice'),
+                        ),
+                      ),
                       for (var i = 0; i < leagues.length; i++)
                         Padding(
                           padding: const EdgeInsets.only(bottom: TotoSpace.md),

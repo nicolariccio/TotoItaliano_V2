@@ -658,7 +658,7 @@ class TotoTheme {
                   ? c.textDisabled
                   : c.textOnPrimary),
           overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)),
+          minimumSize: const WidgetStatePropertyAll(Size(64, 52)),
           padding: const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: TotoSpace.lg),
           ),
@@ -674,19 +674,22 @@ class TotoTheme {
         ),
       ),
 
-      // ── Secondaria: tonale, niente outline (su fondo scuro legge meglio) ──
+      // ── Link / azione terziaria: solo testo brand, niente riempimento.
+      //    Sicura in Row, dialog e righe inline (nessuna larghezza infinita). ─
       textButtonTheme: TextButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith((s) =>
-              s.contains(WidgetState.pressed)
-                  ? c.surfacePressed
-                  : c.neutralContainer),
-          foregroundColor: WidgetStatePropertyAll(c.textPrimary),
-          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)),
+          backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
+          foregroundColor: WidgetStateProperty.resolveWith((s) =>
+              s.contains(WidgetState.disabled) ? c.textDisabled : c.brand),
+          overlayColor: WidgetStatePropertyAll(c.brand.withValues(alpha: 0.10)),
+          minimumSize: const WidgetStatePropertyAll(Size(64, 44)),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: TotoSpace.md),
+          ),
           textStyle: WidgetStatePropertyAll(text.labelLarge),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(TotoRadius.md),
+              borderRadius: BorderRadius.circular(TotoRadius.sm),
             ),
           ),
         ),
@@ -696,7 +699,7 @@ class TotoTheme {
         style: ButtonStyle(
           foregroundColor: WidgetStatePropertyAll(c.textPrimary),
           side: WidgetStatePropertyAll(BorderSide(color: c.borderStrong)),
-          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)),
+          minimumSize: const WidgetStatePropertyAll(Size(64, 48)),
           textStyle: WidgetStatePropertyAll(text.labelLarge),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
@@ -777,7 +780,7 @@ class TotoTheme {
         ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (s) => GoogleFonts.inter(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: s.contains(WidgetState.selected)
                 ? FontWeight.w600
                 : FontWeight.w500,
@@ -826,6 +829,12 @@ class TotoTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(TotoRadius.md),
         ),
+      ),
+
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: c.brand,
+        selectionColor: c.brand.withValues(alpha: 0.30),
+        selectionHandleColor: c.brand,
       ),
 
       progressIndicatorTheme: ProgressIndicatorThemeData(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -24,6 +25,7 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Impostazioni',
             onPressed: () => context.push(RoutePaths.settings),
           ),
         ],
@@ -63,20 +65,29 @@ class _ProfileContent extends ConsumerWidget {
         Center(
           child: Column(
             children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: c.brandFill,
-                backgroundImage:
-                    user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
-                child: user.photoUrl == null
-                    ? Text(
-                        user.username.isNotEmpty
-                            ? user.username[0].toUpperCase()
-                            : '?',
-                        style: theme.textTheme.displaySmall
-                            ?.copyWith(color: c.textOnPrimary),
-                      )
-                    : null,
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: c.brand.withValues(alpha: 0.5), width: 2),
+                ),
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundColor: c.brandFill,
+                  backgroundImage: user.photoUrl != null
+                      ? NetworkImage(user.photoUrl!)
+                      : null,
+                  child: user.photoUrl == null
+                      ? Text(
+                          user.username.isNotEmpty
+                              ? user.username[0].toUpperCase()
+                              : '?',
+                          style: theme.textTheme.displaySmall
+                              ?.copyWith(color: c.textOnPrimary),
+                        )
+                      : null,
+                ),
               ),
               const SizedBox(height: TotoSpace.md),
               Text('@${user.username}', style: theme.textTheme.titleLarge),
@@ -108,8 +119,25 @@ class _ProfileContent extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Codice referral', style: theme.textTheme.bodyMedium),
-              Text(user.referralCode,
-                  style: TotoType.number(18, display: false, color: c.brand)),
+              Row(
+                children: [
+                  Text(user.referralCode,
+                      style:
+                          TotoType.number(18, display: false, color: c.brand)),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, size: 20),
+                    tooltip: 'Copia codice referral',
+                    onPressed: () async {
+                      await Clipboard.setData(
+                          ClipboardData(text: user.referralCode));
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Codice copiato.')),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -136,8 +164,8 @@ class _ProfileContent extends ConsumerWidget {
                 Icon(Icons.admin_panel_settings_outlined, color: c.brand),
                 const SizedBox(width: TotoSpace.md),
                 Expanded(
-                    child:
-                        Text('Gestione admin', style: theme.textTheme.titleSmall)),
+                    child: Text('Gestione admin',
+                        style: theme.textTheme.titleSmall)),
                 Icon(Icons.chevron_right_rounded, color: c.textTertiary),
               ],
             ),
@@ -145,6 +173,8 @@ class _ProfileContent extends ConsumerWidget {
         ],
         const SizedBox(height: TotoSpace.x3l),
         OutlinedButton.icon(
+          style:
+              OutlinedButton.styleFrom(side: BorderSide(color: c.dangerBorder)),
           onPressed: () => ref.read(authRepositoryProvider).signOut(),
           icon: Icon(Icons.logout_rounded, color: c.danger),
           label: Text('Esci', style: TextStyle(color: c.danger)),
