@@ -39,4 +39,13 @@ abstract class AdminRepository {
     required int homeScore,
     required int awayScore,
   });
+
+  /// Imposta il risultato parziale di una partita in corso (la mette in
+  /// stato `live`). Nessun ricalcolo ufficiale dei punti: quello avviene
+  /// solo con [setMatchResultAndRecompute].
+  Future<void> setLiveScore({
+    required Match match,
+    required int homeScore,
+    required int awayScore,
+  });
 }
