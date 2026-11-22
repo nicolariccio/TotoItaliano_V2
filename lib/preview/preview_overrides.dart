@@ -34,7 +34,7 @@ final List<Override> previewOverrides = [
   predictionRepositoryProvider.overrideWithValue(FakePredictionRepository()),
   currentMatchdayProvider.overrideWith((ref) => Future.value(matchday12)),
   currentMatchdayMatchesProvider
-      .overrideWith((ref) => Future.value(matchday12Matches)),
+      .overrideWith((ref) => Stream.value(matchday12Matches)),
   matchdaysProvider.overrideWith((ref) => Future.value(fakeMatchdays)),
   matchByIdProvider
       .overrideWith((ref, matchId) => Future.value(fakeMatchById(matchId))),
